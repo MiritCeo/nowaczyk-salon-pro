@@ -154,3 +154,17 @@ export const getNewClientsCount = (days: number = 30) => {
   cutoffDate.setDate(cutoffDate.getDate() - days);
   return mockClients.filter(c => c.createdAt >= cutoffDate).length;
 };
+
+// Get appointment history for a specific client and car
+export const getClientCarHistory = (clientId: string, carId?: string) => {
+  return mockAppointments
+    .filter(apt => apt.clientId === clientId && (carId ? apt.carId === carId : true))
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+};
+
+// Get all appointments for a client
+export const getClientAppointments = (clientId: string) => {
+  return mockAppointments
+    .filter(apt => apt.clientId === clientId)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+};
