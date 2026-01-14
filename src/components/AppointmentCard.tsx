@@ -25,7 +25,7 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <span className="text-primary font-semibold text-sm whitespace-nowrap">{appointment.time}</span>
+            <span className="text-primary font-semibold text-sm whitespace-nowrap">{appointment.startTime}</span>
             <div className="flex-1 min-w-0">
               <p className="font-medium truncate">{client.firstName} {client.lastName}</p>
               <p className="text-xs text-muted-foreground truncate">{car.brand} {car.model}</p>
@@ -53,7 +53,7 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
             <Clock className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="text-xl font-bold text-primary">{appointment.time}</p>
+            <p className="text-xl font-bold text-primary">{appointment.startTime}</p>
             <p className="text-xs text-muted-foreground">
               {service.duration} min
             </p>

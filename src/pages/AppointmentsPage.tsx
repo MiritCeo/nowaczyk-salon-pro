@@ -29,7 +29,7 @@ export default function AppointmentsPage() {
   const sortedAppointments = [...mockAppointments].sort((a, b) => {
     const dateCompare = b.date.getTime() - a.date.getTime();
     if (dateCompare !== 0) return dateCompare;
-    return a.time.localeCompare(b.time);
+    return a.startTime.localeCompare(b.startTime);
   });
 
   const filteredAppointments = useMemo(() => {
@@ -48,7 +48,7 @@ export default function AppointmentsPage() {
         client?.firstName.toLowerCase().includes(query) ||
         client?.lastName.toLowerCase().includes(query) ||
         service?.name.toLowerCase().includes(query) ||
-        apt.time.includes(query)
+        apt.startTime.includes(query)
       );
     });
   }, [searchQuery, statusFilter, sortedAppointments]);
