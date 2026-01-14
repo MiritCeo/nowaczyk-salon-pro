@@ -9,8 +9,8 @@ import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('michal@nowaczyk.pl');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -122,11 +122,6 @@ export default function LoginPage() {
               {isLoading ? 'Logowanie...' : 'Zaloguj się'}
             </Button>
 
-            <div className="pt-4 border-t border-border">
-              <p className="text-xs text-muted-foreground text-center">
-                <strong>Demo:</strong> michal@nowaczyk.pl / password123
-              </p>
-            </div>
           </form>
         </CardContent>
       </Card>
