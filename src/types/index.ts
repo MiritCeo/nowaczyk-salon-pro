@@ -9,6 +9,7 @@ export interface Client {
   notes?: string;
   cars: Car[];
   createdAt: Date;
+  totalVisits: number;
 }
 
 export interface Car {
@@ -37,9 +38,10 @@ export interface Appointment {
   serviceId: string;
   employeeId?: string;
   date: Date;
-  time: string;
+  startTime: string;
   status: AppointmentStatus;
   notes?: string;
+  price?: number;
 }
 
 export interface Employee {

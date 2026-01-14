@@ -58,7 +58,7 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
   const getAppointmentsForDate = (date: Date) => {
     return mockAppointments.filter(apt => 
       apt.date.toDateString() === date.toDateString()
-    ).sort((a, b) => a.time.localeCompare(b.time));
+    ).sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
   const weekDates = getWeekDates();
@@ -175,7 +175,7 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
                           apt.status === 'no-show' && 'bg-status-no-show/10 border-l-2 border-status-no-show',
                         )}
                       >
-                        <p className="font-semibold text-primary">{apt.time}</p>
+                        <p className="font-semibold text-primary">{apt.startTime}</p>
                         <p className="truncate">{client?.firstName} {client?.lastName?.[0]}.</p>
                         <p className="text-muted-foreground truncate">{service?.name}</p>
                       </button>
@@ -207,7 +207,7 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
                 className="w-full flex items-center gap-4 p-4 rounded-lg bg-card border border-border hover:border-primary/30 transition-all text-left"
               >
                 <div className="text-center min-w-[60px]">
-                  <p className="text-xl font-bold text-primary">{apt.time}</p>
+                  <p className="text-xl font-bold text-primary">{apt.startTime}</p>
                   <p className="text-xs text-muted-foreground">{service?.duration} min</p>
                 </div>
                 <div className="flex-1 min-w-0">

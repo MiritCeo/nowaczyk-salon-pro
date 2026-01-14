@@ -31,7 +31,8 @@ export const mockClients: Client[] = [
     email: 'jan.kowalski@email.pl',
     notes: 'Stały klient, preferuje poniedziałki',
     cars: [mockCars[0], mockCars[1]],
-    createdAt: new Date('2024-01-15')
+    createdAt: new Date('2024-01-15'),
+    totalVisits: 12
   },
   { 
     id: 'cli-2', 
@@ -40,7 +41,8 @@ export const mockClients: Client[] = [
     phone: '+48 601 234 567', 
     email: 'anna.nowak@email.pl',
     cars: [mockCars[2]],
-    createdAt: new Date('2024-02-20')
+    createdAt: new Date('2024-02-20'),
+    totalVisits: 5
   },
   { 
     id: 'cli-3', 
@@ -49,7 +51,8 @@ export const mockClients: Client[] = [
     phone: '+48 602 345 678',
     notes: 'Właściciel firmy, flotowe samochody',
     cars: [mockCars[3]],
-    createdAt: new Date('2024-03-10')
+    createdAt: new Date('2024-03-10'),
+    totalVisits: 8
   },
   { 
     id: 'cli-4', 
@@ -58,7 +61,8 @@ export const mockClients: Client[] = [
     phone: '+48 603 456 789', 
     email: 'marek.z@email.pl',
     cars: [mockCars[4]],
-    createdAt: new Date('2024-11-28')
+    createdAt: new Date('2024-11-28'),
+    totalVisits: 2
   },
 ];
 
@@ -74,9 +78,10 @@ export const mockAppointments: Appointment[] = [
     serviceId: 'srv-2',
     employeeId: 'emp-1',
     date: today, 
-    time: '09:00',
+    startTime: '09:00',
     status: 'completed',
-    notes: 'Klient prosi o szczególną uwagę na felgi'
+    notes: 'Klient prosi o szczególną uwagę na felgi',
+    price: 150
   },
   { 
     id: 'apt-2', 
@@ -85,8 +90,9 @@ export const mockAppointments: Appointment[] = [
     serviceId: 'srv-4',
     employeeId: 'emp-2',
     date: today, 
-    time: '10:30',
-    status: 'in-progress'
+    startTime: '10:30',
+    status: 'in-progress',
+    price: 800
   },
   { 
     id: 'apt-3', 
@@ -95,8 +101,9 @@ export const mockAppointments: Appointment[] = [
     serviceId: 'srv-3',
     employeeId: 'emp-1',
     date: today, 
-    time: '14:00',
-    status: 'scheduled'
+    startTime: '14:00',
+    status: 'scheduled',
+    price: 350
   },
   { 
     id: 'apt-4', 
@@ -105,8 +112,9 @@ export const mockAppointments: Appointment[] = [
     serviceId: 'srv-1',
     employeeId: 'emp-2',
     date: today, 
-    time: '16:00',
-    status: 'scheduled'
+    startTime: '16:00',
+    status: 'scheduled',
+    price: 80
   },
   { 
     id: 'apt-5', 
@@ -115,8 +123,9 @@ export const mockAppointments: Appointment[] = [
     serviceId: 'srv-5',
     employeeId: 'emp-1',
     date: tomorrow, 
-    time: '09:00',
-    status: 'scheduled'
+    startTime: '09:00',
+    status: 'scheduled',
+    price: 1500
   },
   { 
     id: 'apt-6', 
@@ -124,8 +133,9 @@ export const mockAppointments: Appointment[] = [
     carId: 'car-3', 
     serviceId: 'srv-6',
     date: tomorrow, 
-    time: '11:00',
-    status: 'scheduled'
+    startTime: '11:00',
+    status: 'scheduled',
+    price: 250
   },
 ];
 
@@ -138,7 +148,7 @@ export const getTodayAppointments = () => {
   const today = new Date();
   return mockAppointments.filter(apt => 
     apt.date.toDateString() === today.toDateString()
-  ).sort((a, b) => a.time.localeCompare(b.time));
+  ).sort((a, b) => a.startTime.localeCompare(b.startTime));
 };
 
 export const getTomorrowAppointments = () => {
