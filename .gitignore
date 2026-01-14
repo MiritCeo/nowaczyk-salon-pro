@@ -11,6 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
+*.zip
+
+# API diagnostics / test scripts
+api/error.log
+api/test-*.php
+test-password.php
+generate-password.php
+generate-jwt-secret.php
 
 # Editor directories and files
 .vscode/*

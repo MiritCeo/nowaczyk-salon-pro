@@ -1,8 +1,8 @@
 import { Clock, Car, Wrench, Phone, User } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Appointment } from '@/types';
-import { getClientById, getCarById, getServiceById } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -11,11 +11,27 @@ interface AppointmentCardProps {
 }
 
 export function AppointmentCard({ appointment, onClick, compact = false }: AppointmentCardProps) {
-  const client = getClientById(appointment.clientId);
-  const car = getCarById(appointment.carId);
-  const service = getServiceById(appointment.serviceId);
+  const { user } = useAuth();
+  const canSeePrices = user?.role === 'admin';
+  // Użyj danych z appointment jeśli są dostępne, w przeciwnym razie użyj ID
+  const client = appointment.client || { firstName: '', lastName: '', phone: '' };
+  const car = appointment.car || { brand: '', model: '', color: '' };
+  const services = appointment.services && appointment.services.length > 0
+    ? appointment.services
+    : appointment.service
+      ? [appointment.service]
+      : [];
+  const primaryService = services[0] || { name: '', duration: 0, price: 0 };
+  const totalDuration = services.reduce((sum, service) => sum + (Number(service.duration) || 0), 0);
+  const servicesTotalPrice = services.reduce((sum, service) => sum + (Number(service.price) || 0), 0);
+  const extraCost = appointment.extraCost || 0;
+  const basePrice = servicesTotalPrice > 0 ? servicesTotalPrice : (appointment.price || 0);
+  const totalPrice = basePrice + extraCost;
+  const serviceLabel = services.length > 1
+    ? `${primaryService.name} +${services.length - 1}`
+    : primaryService.name;
 
-  if (!client || !car || !service) return null;
+  if (!client || !car) return null;
 
   if (compact) {
     return (
@@ -55,7 +71,7 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
           <div>
             <p className="text-xl font-bold text-primary">{appointment.startTime}</p>
             <p className="text-xs text-muted-foreground">
-              {service.duration} min
+              {totalDuration} min
             </p>
           </div>
         </div>
@@ -77,10 +93,10 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
 
         <div className="flex items-center gap-2">
           <Wrench className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">{service.name}</span>
-          {service.price && (
+          <span className="text-sm text-muted-foreground">{serviceLabel}</span>
+          {canSeePrices && totalPrice > 0 && (
             <span className="text-sm font-medium text-primary ml-auto">
-              {service.price} zł
+              {totalPrice.toFixed(2)} zł
             </span>
           )}
         </div>

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { mockAppointments, getClientById, getServiceById } from '@/data/mockData';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Appointment } from '@/types';
 
 type ViewType = 'day' | 'week' | 'month';
 
@@ -14,11 +14,12 @@ const monthNames = [
 ];
 
 interface CalendarViewProps {
+  appointments: Appointment[];
   onNewAppointment?: () => void;
   onSelectAppointment?: (id: string) => void;
 }
 
-export function CalendarView({ onNewAppointment, onSelectAppointment }: CalendarViewProps) {
+export function CalendarView({ appointments, onNewAppointment, onSelectAppointment }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>('week');
   const [isMobile, setIsMobile] = useState(false);
@@ -56,7 +57,7 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
   };
 
   const getAppointmentsForDate = (date: Date) => {
-    return mockAppointments.filter(apt => 
+    return appointments.filter(apt => 
       apt.date.toDateString() === date.toDateString()
     ).sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
@@ -160,8 +161,16 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
                   isToday && 'border border-primary/20'
                 )}>
                   {appointments.map((apt) => {
-                    const client = getClientById(apt.clientId);
-                    const service = getServiceById(apt.serviceId);
+                    const client = apt.client || { firstName: '', lastName: '' };
+                    const services = apt.services && apt.services.length > 0
+                      ? apt.services
+                      : apt.service
+                        ? [apt.service]
+                        : [];
+                    const primaryService = services[0] || { name: '' };
+                    const serviceLabel = services.length > 1
+                      ? `${primaryService.name} +${services.length - 1}`
+                      : primaryService.name;
                     return (
                       <button
                         key={apt.id}
@@ -176,8 +185,8 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
                         )}
                       >
                         <p className="font-semibold text-primary">{apt.startTime}</p>
-                        <p className="truncate">{client?.firstName} {client?.lastName?.[0]}.</p>
-                        <p className="text-muted-foreground truncate">{service?.name}</p>
+                        <p className="truncate">{client.firstName} {client.lastName?.[0]}.</p>
+                        <p className="text-muted-foreground truncate">{serviceLabel}</p>
                       </button>
                     );
                   })}
@@ -198,8 +207,17 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
       {view === 'day' && (
         <div className="space-y-2">
           {getAppointmentsForDate(currentDate).map((apt) => {
-            const client = getClientById(apt.clientId);
-            const service = getServiceById(apt.serviceId);
+            const client = apt.client || { firstName: '', lastName: '' };
+            const services = apt.services && apt.services.length > 0
+              ? apt.services
+              : apt.service
+                ? [apt.service]
+                : [];
+            const primaryService = services[0] || { name: '', duration: 0 };
+            const totalDuration = services.reduce((sum, service) => sum + (service.duration || 0), 0);
+            const serviceLabel = services.length > 1
+              ? `${primaryService.name} +${services.length - 1}`
+              : primaryService.name;
             return (
               <button
                 key={apt.id}
@@ -208,11 +226,11 @@ export function CalendarView({ onNewAppointment, onSelectAppointment }: Calendar
               >
                 <div className="text-center min-w-[60px]">
                   <p className="text-xl font-bold text-primary">{apt.startTime}</p>
-                  <p className="text-xs text-muted-foreground">{service?.duration} min</p>
+                  <p className="text-xs text-muted-foreground">{totalDuration} min</p>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium">{client?.firstName} {client?.lastName}</p>
-                  <p className="text-sm text-muted-foreground truncate">{service?.name}</p>
+                  <p className="font-medium">{client.firstName} {client.lastName}</p>
+                  <p className="text-sm text-muted-foreground truncate">{serviceLabel}</p>
                 </div>
                 <StatusBadge status={apt.status} />
               </button>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, Phone, Mail, Car, ChevronRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -15,37 +15,96 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockClients } from '@/data/mockData';
+import { clientsAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { Client } from '@/types';
 
 export default function ClientsPage() {
   const [showNewClient, setShowNewClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const filteredClients = useMemo(() => {
-    if (!searchQuery) return mockClients;
-    
-    const query = searchQuery.toLowerCase();
-    return mockClients.filter(client => 
-      client.firstName.toLowerCase().includes(query) ||
-      client.lastName.toLowerCase().includes(query) ||
-      client.phone.includes(query) ||
-      client.email?.toLowerCase().includes(query) ||
-      client.cars.some(car => 
-        car.brand.toLowerCase().includes(query) ||
-        car.model.toLowerCase().includes(query) ||
-        car.plateNumber?.toLowerCase().includes(query)
-      )
-    );
+  useEffect(() => {
+    fetchClients();
   }, [searchQuery]);
 
-  const handleSaveClient = (data: any) => {
-    toast({
-      title: "Klient dodany",
-      description: `${data.firstName} ${data.lastName} został dodany do bazy.`,
-    });
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const params = searchQuery ? { search: searchQuery } : {};
+      const response = await clientsAPI.getAll(params);
+      
+      // Przekształć dane z API na format Client
+      const transformed = response.data.data.map((client: any) => ({
+        id: client.id.toString(),
+        firstName: client.first_name,
+        lastName: client.last_name,
+        phone: client.phone,
+        email: client.email || undefined,
+        notes: client.notes || undefined,
+        totalVisits: client.total_visits || 0,
+        cars: (client.cars || []).map((car: any) => ({
+          id: car.id.toString(),
+          clientId: car.client_id.toString(),
+          brand: car.brand,
+          model: car.model,
+          color: car.color,
+          plateNumber: car.plate_number || undefined,
+          notes: car.notes || undefined,
+        })),
+        createdAt: new Date(client.created_at),
+      }));
+      
+      setClients(transformed);
+    } catch (error: any) {
+      console.error('Error fetching clients:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: 'Nie udało się pobrać klientów',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredClients = useMemo(() => {
+    // Wyszukiwanie już po stronie serwera, ale możemy też filtrować po stronie klienta
+    return clients;
+  }, [clients, searchQuery]);
+
+  const handleSaveClient = async (data: any) => {
+    try {
+      await clientsAPI.create({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone: data.phone,
+        email: data.email || null,
+        notes: data.notes || null,
+        car: data.carBrand ? {
+          brand: data.carBrand,
+          model: data.carModel,
+          color: data.carColor,
+          plate_number: null,
+        } : undefined,
+      });
+      
+      toast({
+        title: "Klient dodany",
+        description: `${data.firstName} ${data.lastName} został dodany do bazy.`,
+      });
+      setShowNewClient(false);
+      fetchClients(); // Odśwież listę
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się dodać klienta',
+      });
+    }
   };
 
   const handleClientClick = (clientId: string) => {
@@ -60,7 +119,7 @@ export default function ClientsPage() {
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Klienci</h1>
             <p className="text-muted-foreground">
-              {mockClients.length} {mockClients.length === 1 ? 'klient' : 'klientów'} w bazie
+              {clients.length} {clients.length === 1 ? 'klient' : 'klientów'} w bazie
             </p>
           </div>
           
@@ -78,7 +137,14 @@ export default function ClientsPage() {
         />
 
         {/* Client Table */}
-        {filteredClients.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Ładowanie klientów...</p>
+            </div>
+          </div>
+        ) : filteredClients.length > 0 ? (
           <Card>
             <CardContent className="p-0">
               <Table>

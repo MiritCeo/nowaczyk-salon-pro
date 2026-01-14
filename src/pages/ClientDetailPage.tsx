@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Phone, Mail, Car, Calendar, Edit, Plus } from 'lucide-react';
 import { format } from 'date-fns';
@@ -14,13 +15,119 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockClients, getClientCarHistory, getServiceById } from '@/data/mockData';
+import { clientsAPI, appointmentsAPI, carsAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
+import { Client, Appointment } from '@/types';
+import { NewCarModal } from '@/components/modals/NewCarModal';
+import { NewAppointmentModal } from '@/components/modals/NewAppointmentModal';
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [client, setClient] = useState<Client | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showNewCar, setShowNewCar] = useState(false);
+  const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
+  const { toast } = useToast();
   
-  const client = mockClients.find(c => c.id === id);
+  useEffect(() => {
+    if (id) {
+      fetchClientData();
+    }
+  }, [id]);
+
+  const fetchClientData = async () => {
+    try {
+      setLoading(true);
+      const clientRes = await clientsAPI.getOne(id!);
+      const clientData = clientRes.data.data;
+      const transformedClient: Client = {
+        id: clientData.id.toString(),
+        firstName: clientData.first_name,
+        lastName: clientData.last_name,
+        phone: clientData.phone,
+        email: clientData.email || undefined,
+        notes: clientData.notes || undefined,
+        totalVisits: clientData.total_visits || 0,
+        cars: (clientData.cars || []).map((car: any) => ({
+          id: car.id.toString(),
+          clientId: car.client_id.toString(),
+          brand: car.brand,
+          model: car.model,
+          color: car.color,
+          plateNumber: car.plate_number || undefined,
+          notes: car.notes || undefined,
+        })),
+        createdAt: new Date(clientData.created_at),
+      };
+      
+      setClient(transformedClient);
+
+      // Pobierz wizyty osobno, aby błąd nie blokował widoku klienta
+      try {
+        const appointmentsRes = await appointmentsAPI.getAll({ client_id: id });
+        const transformedAppointments = appointmentsRes.data.data.map((apt: any) => ({
+          id: apt.id.toString(),
+          clientId: apt.client_id.toString(),
+          carId: apt.car_id.toString(),
+          serviceId: apt.service_id ? apt.service_id.toString() : undefined,
+          serviceIds: Array.isArray(apt.service_ids) ? apt.service_ids.map((id: any) => id.toString()) : undefined,
+          employeeId: apt.employee_id ? apt.employee_id.toString() : undefined,
+          date: new Date(apt.date),
+          startTime: apt.start_time,
+          status: apt.status as any,
+          notes: apt.notes || undefined,
+          price: apt.price ? parseFloat(apt.price) : undefined,
+          extraCost: apt.extra_cost ? parseFloat(apt.extra_cost) : undefined,
+          services: Array.isArray(apt.services) ? apt.services.map((service: any) => ({
+            id: service.id?.toString?.() ?? service.id,
+            name: service.name,
+            duration: service.duration,
+            category: service.category,
+            price: service.price ? parseFloat(service.price) : service.price,
+            description: service.description,
+          })) : undefined,
+          service: apt.service_name ? {
+            name: apt.service_name,
+          } : undefined,
+        }));
+
+        setAppointments(transformedAppointments);
+      } catch (error: any) {
+        console.error('Error fetching appointments:', error);
+        setAppointments([]);
+        toast({
+          variant: 'destructive',
+          title: 'Błąd',
+          description: 'Nie udało się pobrać wizyt klienta',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error fetching client:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: 'Nie udało się pobrać danych klienta',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Ładowanie...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
   
   if (!client) {
     return (
@@ -35,9 +142,75 @@ export default function ClientDetailPage() {
     );
   }
 
+  const handleSaveCar = async (data: any) => {
+    try {
+      await carsAPI.create(data);
+      toast({
+        title: "Pojazd dodany",
+        description: "Nowy pojazd został dodany do klienta.",
+      });
+      setShowNewCar(false);
+      fetchClientData(); // Odśwież dane klienta
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się dodać pojazdu',
+      });
+    }
+  };
+
+  const handleBookAppointment = (carId: string) => {
+    setSelectedCarId(carId);
+    setShowNewAppointment(true);
+  };
+
+  const handleSaveAppointment = async (data: any) => {
+    try {
+      // Walidacja przed wysłaniem
+      if (!data.clientId || !data.carId || !data.serviceIds || data.serviceIds.length === 0 || !data.date || !data.time) {
+        toast({
+          variant: 'destructive',
+          title: 'Błąd',
+          description: 'Wypełnij wszystkie wymagane pola',
+        });
+        return;
+      }
+      
+      const appointmentData = {
+        client_id: parseInt(data.clientId),
+        car_id: parseInt(data.carId),
+        service_ids: data.serviceIds.map((id: string) => parseInt(id)),
+        employee_id: data.employeeId && data.employeeId !== '' ? parseInt(data.employeeId) : null,
+        date: data.date,
+        start_time: data.time,
+        notes: data.notes || null,
+        extra_cost: data.extraCost ? parseFloat(data.extraCost) : null,
+        status: 'scheduled',
+      };
+      
+      await appointmentsAPI.create(appointmentData);
+      
+      toast({
+        title: "Wizyta zaplanowana",
+        description: "Nowa wizyta została dodana do kalendarza.",
+      });
+      setShowNewAppointment(false);
+      setSelectedCarId(null);
+      fetchClientData(); // Odśwież dane klienta
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się dodać wizyty',
+      });
+    }
+  };
+
+  // Grupuj wizyty po samochodach
   const carHistories = client.cars.map(car => ({
     car,
-    history: getClientCarHistory(client.id, car.id)
+    history: appointments.filter(apt => apt.carId === car.id)
   }));
 
   return (
@@ -123,7 +296,7 @@ export default function ClientDetailPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Pojazdy i historia usług</h2>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowNewCar(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Dodaj pojazd
             </Button>
@@ -152,7 +325,11 @@ export default function ClientDetailPage() {
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" className="gradient-brand shadow-button">
+                  <Button 
+                    size="sm" 
+                    className="gradient-brand shadow-button"
+                    onClick={() => handleBookAppointment(car.id)}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Umów wizytę
                   </Button>
@@ -171,7 +348,6 @@ export default function ClientDetailPage() {
                     </TableHeader>
                     <TableBody>
                       {history.map((appointment) => {
-                        const service = getServiceById(appointment.serviceId);
                         return (
                           <TableRow key={appointment.id}>
                             <TableCell>
@@ -185,7 +361,13 @@ export default function ClientDetailPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <p className="font-medium text-foreground">{service?.name || 'Usługa'}</p>
+                              <p className="font-medium text-foreground">
+                                {appointment.services && appointment.services.length > 0
+                                  ? (appointment.services.length > 1
+                                      ? `${appointment.services[0]?.name} +${appointment.services.length - 1}`
+                                      : appointment.services[0]?.name)
+                                  : (appointment.service?.name || 'Usługa')}
+                              </p>
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
                               {appointment.price ? (
@@ -213,6 +395,25 @@ export default function ClientDetailPage() {
           ))}
         </div>
       </div>
+
+      <NewCarModal 
+        open={showNewCar} 
+        onClose={() => setShowNewCar(false)}
+        onSave={handleSaveCar}
+        clientId={id!}
+      />
+      <NewAppointmentModal 
+        open={showNewAppointment} 
+        onClose={() => {
+          setShowNewAppointment(false);
+          setSelectedCarId(null);
+        }}
+        onSave={handleSaveAppointment}
+        prefillData={selectedCarId && client ? {
+          clientId: client.id,
+          carId: selectedCarId,
+        } : undefined}
+      />
     </AppLayout>
   );
 }

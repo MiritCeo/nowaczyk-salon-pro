@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -6,9 +6,12 @@ import {
   ClipboardList, 
   Bell, 
   Settings,
-  Wrench
+  Wrench,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.jpg';
 
 const navItems = [
@@ -22,6 +25,13 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   return (
     <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-[hsl(220,18%,10%)] text-[hsl(220,10%,90%)]">
@@ -57,16 +67,24 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-[hsl(220,12%,18%)]">
+      <div className="p-4 border-t border-[hsl(220,12%,18%)] space-y-3">
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
-            MN
+            {user?.name.split(' ').map(n => n[0]).join('') || 'MN'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-white">Michał Nowaczyk</p>
-            <p className="text-xs text-[hsl(220,10%,60%)]">Administrator</p>
+            <p className="text-sm font-medium truncate text-white">{user?.name || 'Michał Nowaczyk'}</p>
+            <p className="text-xs text-[hsl(220,10%,60%)]">{user?.role === 'admin' ? 'Administrator' : 'Pracownik'}</p>
           </div>
         </div>
+        <Button 
+          onClick={handleLogout} 
+          variant="ghost" 
+          className="w-full justify-start text-[hsl(220,10%,70%)] hover:bg-[hsl(220,12%,16%)] hover:text-white"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Wyloguj się
+        </Button>
       </div>
     </aside>
   );

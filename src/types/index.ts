@@ -35,20 +35,31 @@ export interface Appointment {
   id: string;
   clientId: string;
   carId: string;
-  serviceId: string;
+  serviceId?: string;
+  serviceIds?: string[];
   employeeId?: string;
   date: Date;
   startTime: string;
   status: AppointmentStatus;
   notes?: string;
   price?: number;
+  extraCost?: number;
+  // Opcjonalne dane z API (dla wyświetlania bez dodatkowych zapytań)
+  client?: Partial<Client>;
+  car?: Partial<Car>;
+  service?: Partial<Service>;
+  services?: Partial<Service>[];
+  employee?: Partial<Employee>;
 }
 
 export interface Employee {
-  id: string;
+  id: string | number;
   name: string;
   role: 'admin' | 'employee';
   email: string;
+  notificationEmail?: string;
+  notificationPhone?: string;
+  is_active?: boolean;
 }
 
 export interface Notification {

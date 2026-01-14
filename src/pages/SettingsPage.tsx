@@ -1,10 +1,86 @@
-import { Wrench, Users, Clock, ChevronRight, Store } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Wrench, Users, Clock, ChevronRight, Store, Plus } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { mockServices, mockEmployees } from '@/data/mockData';
+import { servicesAPI, employeesAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { NewServiceModal } from '@/components/modals/NewServiceModal';
+import { NewEmployeeModal } from '@/components/modals/NewEmployeeModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
+  const [showNewService, setShowNewService] = useState(false);
+  const [showNewEmployee, setShowNewEmployee] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const canSeePrices = user?.role === 'admin';
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [servicesRes, employeesRes] = await Promise.all([
+        servicesAPI.getAll(),
+        employeesAPI.getAll(),
+      ]);
+      setServices(servicesRes.data.data || []);
+      setEmployees(employeesRes.data.data || []);
+    } catch (error: any) {
+      console.error('Error fetching data:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: 'Nie udało się pobrać danych',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveService = async (data: any) => {
+    try {
+      await servicesAPI.create(data);
+      toast({
+        title: "Usługa dodana",
+        description: `${data.name} została dodana do bazy.`,
+      });
+      setShowNewService(false);
+      fetchData(); // Odśwież listę
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się dodać usługi',
+      });
+    }
+  };
+
+  const handleSaveEmployee = async (data: any) => {
+    try {
+      await employeesAPI.create(data);
+      toast({
+        title: "Pracownik dodany",
+        description: `${data.name} został dodany do bazy.`,
+      });
+      setShowNewEmployee(false);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się dodać pracownika',
+      });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
@@ -21,10 +97,37 @@ export default function SettingsPage() {
               <Wrench className="w-5 h-5 text-primary" />
               Usługi
             </CardTitle>
-            <button className="text-sm text-primary hover:underline font-medium">+ Dodaj usługę</button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setShowNewService(true)}
+              className="text-sm text-primary hover:underline font-medium"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Dodaj usługę
+            </Button>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-2">
-            {mockServices.map((service) => (
+            {loading ? (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                Ładowanie...
+              </div>
+            ) : services.length === 0 ? (
+              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                <Wrench className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Brak usług w bazie</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowNewService(true)}
+                  className="mt-4"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Dodaj pierwszą usługę
+                </Button>
+              </div>
+            ) : (
+              services.map((service) => (
               <button
                 key={service.id}
                 className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/30 transition-all text-left"
@@ -42,14 +145,15 @@ export default function SettingsPage() {
                       <Clock className="w-3.5 h-3.5 inline mr-1" />
                       {service.duration} min
                     </span>
-                    {service.price && (
+                    {canSeePrices && service.price && (
                       <span className="text-primary font-medium">{service.price} zł</span>
                     )}
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -60,10 +164,28 @@ export default function SettingsPage() {
               <Users className="w-5 h-5 text-primary" />
               Pracownicy
             </CardTitle>
-            <button className="text-sm text-primary hover:underline font-medium">+ Dodaj pracownika</button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="text-sm text-primary hover:underline font-medium"
+              onClick={() => setShowNewEmployee(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Dodaj pracownika
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
-            {mockEmployees.map((employee) => (
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Ładowanie...
+              </div>
+            ) : employees.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Brak pracowników w bazie</p>
+              </div>
+            ) : (
+              employees.map((employee) => (
               <button
                 key={employee.id}
                 className="w-full flex items-center gap-4 p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/30 transition-all text-left"
@@ -85,9 +207,22 @@ export default function SettingsPage() {
                 </span>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </button>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
+
+        <NewServiceModal 
+          open={showNewService} 
+          onClose={() => setShowNewService(false)}
+          onSave={handleSaveService}
+        />
+
+        <NewEmployeeModal
+          open={showNewEmployee}
+          onClose={() => setShowNewEmployee(false)}
+          onSave={handleSaveEmployee}
+        />
 
         {/* Working Hours */}
         <Card className="border-border/50">

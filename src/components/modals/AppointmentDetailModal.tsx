@@ -11,14 +11,15 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Separator } from '@/components/ui/separator';
 import { Appointment, AppointmentStatus } from '@/types';
-import { getClientById, getCarById, getServiceById, getEmployeeById } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AppointmentDetailModalProps {
   appointment: Appointment | null;
   open: boolean;
   onClose: () => void;
   onStatusChange?: (id: string, status: AppointmentStatus) => void;
+  onEdit?: (appointment: Appointment) => void;
 }
 
 const statusOptions: { value: AppointmentStatus; label: string }[] = [
@@ -33,16 +34,30 @@ export function AppointmentDetailModal({
   appointment, 
   open, 
   onClose,
-  onStatusChange 
+  onStatusChange,
+  onEdit
 }: AppointmentDetailModalProps) {
   if (!appointment) return null;
+  const { user } = useAuth();
+  const canSeePrices = user?.role === 'admin';
 
-  const client = getClientById(appointment.clientId);
-  const car = getCarById(appointment.carId);
-  const service = getServiceById(appointment.serviceId);
-  const employee = appointment.employeeId ? getEmployeeById(appointment.employeeId) : null;
+  // Użyj danych z appointment jeśli są dostępne
+  const client = appointment.client || { firstName: '', lastName: '', phone: '', email: '' };
+  const car = appointment.car || { brand: '', model: '', color: '', plateNumber: '' };
+  const services = appointment.services && appointment.services.length > 0
+    ? appointment.services
+    : appointment.service
+      ? [appointment.service]
+      : [];
+  const primaryService = services[0] || { name: '', description: '', duration: 0, price: 0 };
+  const totalDuration = services.reduce((sum, service) => sum + (Number(service.duration) || 0), 0);
+  const servicesTotalPrice = services.reduce((sum, service) => sum + (Number(service.price) || 0), 0);
+  const extraCost = appointment.extraCost || 0;
+  const basePrice = servicesTotalPrice > 0 ? servicesTotalPrice : (appointment.price || 0);
+  const totalPrice = basePrice + extraCost;
+  const employee = appointment.employee || null;
 
-  if (!client || !car || !service) return null;
+  if (!client || !car) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -67,11 +82,11 @@ export function AppointmentDetailModal({
             </div>
             <div className="flex-1">
               <p className="text-2xl font-bold text-primary">{appointment.startTime}</p>
-              <p className="text-sm text-muted-foreground">{service.duration} minut</p>
+              <p className="text-sm text-muted-foreground">{totalDuration} minut</p>
             </div>
-            {appointment.price && (
+            {canSeePrices && totalPrice > 0 && (
               <div className="text-right">
-                <p className="text-2xl font-bold text-foreground">{appointment.price} zł</p>
+                <p className="text-2xl font-bold text-foreground">{totalPrice.toFixed(2)} zł</p>
                 <p className="text-sm text-muted-foreground">cena</p>
               </div>
             )}
@@ -82,11 +97,57 @@ export function AppointmentDetailModal({
             <div className="flex items-center gap-3">
               <Wrench className="w-5 h-5 text-muted-foreground" />
               <div>
-                <p className="font-medium text-foreground">{service.name}</p>
-                <p className="text-sm text-muted-foreground">{service.description}</p>
+                <p className="font-medium text-foreground">
+                  {services.length > 1 ? `Usługi (${services.length})` : primaryService.name || ''}
+                </p>
+                {services.length <= 1 && (
+                  <p className="text-sm text-muted-foreground">{primaryService.description || ''}</p>
+                )}
               </div>
             </div>
+            {services.length > 1 && (
+              <div className="space-y-2">
+                {services.map((service, index) => (
+                  <div key={`${service.name}-${index}`} className="flex items-center justify-between text-sm">
+                    <span className="text-foreground">{service.name}</span>
+                    <span className="text-muted-foreground">{service.duration ? `${service.duration} min` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {canSeePrices && (servicesTotalPrice > 0 || appointment.price || appointment.extraCost) && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                {servicesTotalPrice > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Suma usług</span>
+                    <span className="font-medium text-foreground">{servicesTotalPrice.toFixed(2)} zł</span>
+                  </div>
+                )}
+                {appointment.price && servicesTotalPrice === 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Cena</span>
+                    <span className="font-medium text-foreground">{appointment.price.toFixed(2)} zł</span>
+                  </div>
+                )}
+                {appointment.extraCost && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Dopłata</span>
+                    <span className="font-medium text-foreground">{appointment.extraCost.toFixed(2)} zł</span>
+                  </div>
+                )}
+                {totalPrice > 0 && (
+                  <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
+                    <span className="text-muted-foreground">Razem</span>
+                    <span className="font-semibold text-foreground">{totalPrice.toFixed(2)} zł</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <Separator />
 
@@ -101,10 +162,10 @@ export function AppointmentDetailModal({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                    {client.firstName[0]}{client.lastName[0]}
+                    {client.firstName?.[0] || ''}{client.lastName?.[0] || ''}
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{client.firstName} {client.lastName}</p>
+                    <p className="font-medium text-foreground">{client.firstName || ''} {client.lastName || ''}</p>
                     <p className="text-sm text-muted-foreground">Klient</p>
                   </div>
                 </div>
@@ -141,7 +202,7 @@ export function AppointmentDetailModal({
             </h3>
             
             <div className="p-3 rounded-lg bg-muted/50">
-              <p className="font-medium text-foreground">{car.brand} {car.model}</p>
+              <p className="font-medium text-foreground">{car.brand || ''} {car.model || ''}</p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 {car.plateNumber && <span>{car.plateNumber}</span>}
                 {car.color && (
@@ -192,20 +253,24 @@ export function AppointmentDetailModal({
           <div className="space-y-3">
             <h3 className="font-semibold text-foreground">Zmień status</h3>
             <div className="flex flex-wrap gap-2">
-              {statusOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => onStatusChange?.(appointment.id, option.value)}
-                  className={cn(
-                    'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
-                    appointment.status === option.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
+              {statusOptions.map((option) => {
+                const isCurrent = appointment.status === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => onStatusChange?.(appointment.id, option.value)}
+                    disabled={isCurrent}
+                    className={cn(
+                      'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                      isCurrent
+                        ? 'bg-primary text-primary-foreground cursor-default opacity-80'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -214,7 +279,11 @@ export function AppointmentDetailModal({
             <Button variant="outline" className="flex-1" onClick={onClose}>
               Zamknij
             </Button>
-            <Button className="flex-1 gradient-brand shadow-button">
+            <Button
+              className="flex-1 gradient-brand shadow-button"
+              onClick={() => appointment && onEdit?.(appointment)}
+              disabled={!onEdit}
+            >
               Edytuj wizytę
             </Button>
           </div>
