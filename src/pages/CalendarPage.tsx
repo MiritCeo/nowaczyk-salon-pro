@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CalendarView } from '@/components/CalendarView';
 import { NewAppointmentModal } from '@/components/modals/NewAppointmentModal';
+import { AppointmentDetailModal } from '@/components/modals/AppointmentDetailModal';
+import { mockAppointments } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { Appointment } from '@/types';
 
 export default function CalendarPage() {
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const { toast } = useToast();
 
   const handleSaveAppointment = (data: any) => {
@@ -16,7 +20,18 @@ export default function CalendarPage() {
   };
 
   const handleSelectAppointment = (id: string) => {
-    console.log('Selected appointment:', id);
+    const appointment = mockAppointments.find(a => a.id === id);
+    if (appointment) {
+      setSelectedAppointment(appointment);
+    }
+  };
+
+  const handleStatusChange = (id: string, status: any) => {
+    toast({
+      title: "Status zmieniony",
+      description: `Status wizyty został zmieniony na: ${status}`,
+    });
+    setSelectedAppointment(null);
   };
 
   return (
@@ -32,6 +47,12 @@ export default function CalendarPage() {
         open={showNewAppointment} 
         onClose={() => setShowNewAppointment(false)}
         onSave={handleSaveAppointment}
+      />
+      <AppointmentDetailModal
+        appointment={selectedAppointment}
+        open={!!selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+        onStatusChange={handleStatusChange}
       />
     </AppLayout>
   );

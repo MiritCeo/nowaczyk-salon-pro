@@ -6,12 +6,15 @@ import { AppointmentCard } from '@/components/AppointmentCard';
 import { QuickActions } from '@/components/QuickActions';
 import { NewClientModal } from '@/components/modals/NewClientModal';
 import { NewAppointmentModal } from '@/components/modals/NewAppointmentModal';
-import { getTodayAppointments, getTomorrowAppointments, getNewClientsCount } from '@/data/mockData';
+import { AppointmentDetailModal } from '@/components/modals/AppointmentDetailModal';
+import { getTodayAppointments, getTomorrowAppointments, getNewClientsCount, mockAppointments } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { Appointment } from '@/types';
 
 export default function Dashboard() {
   const [showNewClient, setShowNewClient] = useState(false);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const { toast } = useToast();
   
   const todayAppointments = getTodayAppointments();
@@ -37,6 +40,21 @@ export default function Dashboard() {
       title: "Powiadomienia",
       description: "Otwieranie centrum powiadomień...",
     });
+  };
+
+  const handleSelectAppointment = (id: string) => {
+    const appointment = mockAppointments.find(a => a.id === id);
+    if (appointment) {
+      setSelectedAppointment(appointment);
+    }
+  };
+
+  const handleStatusChange = (id: string, status: any) => {
+    toast({
+      title: "Status zmieniony",
+      description: `Status wizyty został zmieniony na: ${status}`,
+    });
+    setSelectedAppointment(null);
   };
 
   const inProgressCount = todayAppointments.filter(a => a.status === 'in-progress').length;
@@ -111,7 +129,7 @@ export default function Dashboard() {
                 <AppointmentCard 
                   key={appointment.id} 
                   appointment={appointment}
-                  onClick={() => console.log('Open appointment', appointment.id)}
+                  onClick={() => handleSelectAppointment(appointment.id)}
                 />
               ))}
             </div>
@@ -133,7 +151,7 @@ export default function Dashboard() {
                   key={appointment.id} 
                   appointment={appointment}
                   compact
-                  onClick={() => console.log('Open appointment', appointment.id)}
+                  onClick={() => handleSelectAppointment(appointment.id)}
                 />
               ))}
             </div>
@@ -151,6 +169,12 @@ export default function Dashboard() {
         open={showNewAppointment} 
         onClose={() => setShowNewAppointment(false)}
         onSave={handleSaveAppointment}
+      />
+      <AppointmentDetailModal
+        appointment={selectedAppointment}
+        open={!!selectedAppointment}
+        onClose={() => setSelectedAppointment(null)}
+        onStatusChange={handleStatusChange}
       />
     </AppLayout>
   );
