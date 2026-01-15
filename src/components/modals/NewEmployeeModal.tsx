@@ -6,13 +6,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+interface EmployeeInitialData {
+  name: string;
+  email: string;
+  role: 'admin' | 'employee';
+  is_active: number;
+  notification_email?: string | null;
+  notification_phone?: string | null;
+}
+
 interface NewEmployeeModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
+  onDelete?: () => void;
+  initialData?: EmployeeInitialData;
+  disableDelete?: boolean;
 }
 
-export function NewEmployeeModal({ open, onClose, onSave }: NewEmployeeModalProps) {
+export function NewEmployeeModal({
+  open,
+  onClose,
+  onSave,
+  onDelete,
+  initialData,
+  disableDelete = false,
+}: NewEmployeeModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,8 +39,10 @@ export function NewEmployeeModal({ open, onClose, onSave }: NewEmployeeModalProp
     role: 'employee',
     notificationEmail: '',
     notificationPhone: '',
+    isActive: 1,
   });
   const [error, setError] = useState<string | null>(null);
+  const isEditing = Boolean(initialData);
 
   useEffect(() => {
     if (!open) {
@@ -32,28 +53,46 @@ export function NewEmployeeModal({ open, onClose, onSave }: NewEmployeeModalProp
         role: 'employee',
         notificationEmail: '',
         notificationPhone: '',
+        isActive: 1,
       });
       setError(null);
+      return;
     }
-  }, [open]);
+
+    setFormData({
+      name: initialData?.name ?? '',
+      email: initialData?.email ?? '',
+      password: '',
+      role: initialData?.role ?? 'employee',
+      notificationEmail: initialData?.notification_email ?? '',
+      notificationPhone: initialData?.notification_phone ?? '',
+      isActive: typeof initialData?.is_active === 'number' ? initialData.is_active : 1,
+    });
+    setError(null);
+  }, [open, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || (!isEditing && !formData.password)) {
       setError('Wypełnij wymagane pola');
       return;
     }
 
     setError(null);
-    onSave({
+    const payload: Record<string, any> = {
       name: formData.name,
       email: formData.email,
-      password: formData.password,
       role: formData.role,
       notification_email: formData.notificationEmail || null,
       notification_phone: formData.notificationPhone || null,
-      is_active: 1,
-    });
+      is_active: formData.isActive,
+    };
+
+    if (formData.password) {
+      payload.password = formData.password;
+    }
+
+    onSave(payload);
     onClose();
   };
 
@@ -67,7 +106,7 @@ export function NewEmployeeModal({ open, onClose, onSave }: NewEmployeeModalProp
             <div className="p-2 rounded-lg bg-primary/10">
               <UserPlus className="w-5 h-5 text-primary" />
             </div>
-            Nowy pracownik
+            {isEditing ? 'Edycja pracownika' : 'Nowy pracownik'}
           </DialogTitle>
         </DialogHeader>
 
@@ -108,14 +147,14 @@ export function NewEmployeeModal({ open, onClose, onSave }: NewEmployeeModalProp
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-muted-foreground" />
-              Hasło *
+              Hasło {isEditing ? '(opcjonalne)' : '*'}
             </Label>
             <Input
               type="password"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              placeholder="Minimum 8 znaków"
-              required
+              placeholder={isEditing ? "Pozostaw puste, aby nie zmieniać" : "Minimum 8 znaków"}
+              required={!isEditing}
             />
           </div>
 
@@ -161,13 +200,30 @@ export function NewEmployeeModal({ open, onClose, onSave }: NewEmployeeModalProp
           </div>
 
           <div className="flex gap-3 pt-4">
+            {isEditing && onDelete && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={onDelete}
+                disabled={disableDelete}
+                className="flex-1"
+              >
+                Usuń pracownika
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Anuluj
             </Button>
             <Button type="submit" className="flex-1 gradient-brand shadow-button">
-              Dodaj pracownika
+              {isEditing ? 'Zapisz zmiany' : 'Dodaj pracownika'}
             </Button>
           </div>
+
+          {isEditing && disableDelete && (
+            <div className="text-xs text-muted-foreground">
+              Nie można usunąć konta administratora.
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>

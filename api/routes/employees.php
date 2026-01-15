@@ -96,6 +96,10 @@ function handleDeleteEmployee($db, $id) {
         errorResponse('Employee not found', 404);
     }
 
+    if ($employee['role'] === 'admin') {
+        errorResponse('Nie można usunąć konta administratora', 403);
+    }
+
     $db->query("UPDATE employees SET deleted_at = NOW() WHERE id = ?", [$id]);
     jsonResponse(['message' => 'Pracownik został usunięty']);
 }

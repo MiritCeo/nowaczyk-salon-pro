@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const [showNewService, setShowNewService] = useState(false);
   const [editingService, setEditingService] = useState<any | null>(null);
   const [showNewEmployee, setShowNewEmployee] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
   const [services, setServices] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,45 @@ export default function SettingsPage() {
         variant: 'destructive',
         title: 'Błąd',
         description: error.response?.data?.error || 'Nie udało się dodać pracownika',
+      });
+    }
+  };
+
+  const handleUpdateEmployee = async (data: any) => {
+    if (!editingEmployee) return;
+    try {
+      await employeesAPI.update(editingEmployee.id.toString(), data);
+      toast({
+        title: "Pracownik zaktualizowany",
+        description: `${data.name} został zaktualizowany.`,
+      });
+      setEditingEmployee(null);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się zaktualizować pracownika',
+      });
+    }
+  };
+
+  const handleDeleteEmployee = async () => {
+    if (!editingEmployee) return;
+    if (!confirm('Czy na pewno chcesz usunąć tego pracownika?')) return;
+    try {
+      await employeesAPI.delete(editingEmployee.id.toString());
+      toast({
+        title: "Pracownik usunięty",
+        description: `${editingEmployee.name} został usunięty.`,
+      });
+      setEditingEmployee(null);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się usunąć pracownika',
       });
     }
   };
@@ -231,6 +271,7 @@ export default function SettingsPage() {
               employees.map((employee) => (
               <button
                 key={employee.id}
+                onClick={() => setEditingEmployee(employee)}
                 className="w-full flex items-center gap-4 p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/30 transition-all text-left"
               >
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -278,6 +319,21 @@ export default function SettingsPage() {
           open={showNewEmployee}
           onClose={() => setShowNewEmployee(false)}
           onSave={handleSaveEmployee}
+        />
+        <NewEmployeeModal
+          open={!!editingEmployee}
+          onClose={() => setEditingEmployee(null)}
+          onSave={handleUpdateEmployee}
+          onDelete={handleDeleteEmployee}
+          disableDelete={editingEmployee?.role === 'admin'}
+          initialData={editingEmployee ? {
+            name: editingEmployee.name,
+            email: editingEmployee.email,
+            role: editingEmployee.role,
+            is_active: editingEmployee.is_active,
+            notification_email: editingEmployee.notification_email,
+            notification_phone: editingEmployee.notification_phone,
+          } : undefined}
         />
 
         {/* Working Hours */}
