@@ -108,6 +108,7 @@ function handleDashboard($db, $user) {
         if ($hidePrices) {
             $row['price'] = null;
             $row['extra_cost'] = null;
+            $row['paid_amount'] = null;
         }
         return $row;
     }, $todayAppointments);
@@ -120,6 +121,7 @@ function handleDashboard($db, $user) {
         if ($hidePrices) {
             $row['price'] = null;
             $row['extra_cost'] = null;
+            $row['paid_amount'] = null;
         }
         return $row;
     }, $tomorrowAppointments);
