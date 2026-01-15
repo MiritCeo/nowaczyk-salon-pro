@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Phone, Mail, Car, Calendar, Edit, Plus } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, Car, Calendar, Edit, Plus, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Client, Appointment } from '@/types';
 import { NewCarModal } from '@/components/modals/NewCarModal';
 import { NewAppointmentModal } from '@/components/modals/NewAppointmentModal';
+import { EditClientModal } from '@/components/modals/EditClientModal';
 
 export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,7 @@ export default function ClientDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showNewCar, setShowNewCar] = useState(false);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
+  const [showEditClient, setShowEditClient] = useState(false);
   const [selectedCarId, setSelectedCarId] = useState<string | null>(null);
   const { toast } = useToast();
   
@@ -207,6 +209,46 @@ export default function ClientDetailPage() {
     }
   };
 
+  const handleDeleteClient = async () => {
+    if (!client) return;
+    if (!confirm(`Czy na pewno chcesz usunąć klienta ${client.firstName} ${client.lastName}?`)) {
+      return;
+    }
+    try {
+      await clientsAPI.delete(client.id);
+      toast({
+        title: "Klient usunięty",
+        description: `${client.firstName} ${client.lastName} został usunięty.`,
+      });
+      navigate('/clients');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się usunąć klienta',
+      });
+    }
+  };
+
+  const handleUpdateClient = async (data: any) => {
+    if (!client) return;
+    try {
+      await clientsAPI.update(client.id, data);
+      toast({
+        title: "Dane klienta zaktualizowane",
+        description: `${client.firstName} ${client.lastName} został zaktualizowany.`,
+      });
+      setShowEditClient(false);
+      fetchClientData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się zaktualizować klienta',
+      });
+    }
+  };
+
   // Grupuj wizyty po samochodach
   const carHistories = client.cars.map(car => ({
     car,
@@ -234,9 +276,14 @@ export default function ClientDetailPage() {
               Klient od {format(client.createdAt, 'd MMMM yyyy', { locale: pl })}
             </p>
           </div>
-          <Button variant="outline" size="icon">
-            <Edit className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setShowEditClient(true)}>
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button variant="destructive" size="icon" onClick={handleDeleteClient}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Client Info Card */}
@@ -413,6 +460,12 @@ export default function ClientDetailPage() {
           clientId: client.id,
           carId: selectedCarId,
         } : undefined}
+      />
+      <EditClientModal
+        open={showEditClient}
+        onClose={() => setShowEditClient(false)}
+        onSave={handleUpdateClient}
+        client={client}
       />
     </AppLayout>
   );

@@ -20,6 +20,7 @@ interface AppointmentDetailModalProps {
   onClose: () => void;
   onStatusChange?: (id: string, status: AppointmentStatus) => void;
   onEdit?: (appointment: Appointment) => void;
+  onDelete?: (appointment: Appointment) => void;
 }
 
 const statusOptions: { value: AppointmentStatus; label: string }[] = [
@@ -35,7 +36,8 @@ export function AppointmentDetailModal({
   open, 
   onClose,
   onStatusChange,
-  onEdit
+  onEdit,
+  onDelete
 }: AppointmentDetailModalProps) {
   if (!appointment) return null;
   const { user } = useAuth();
@@ -279,6 +281,15 @@ export function AppointmentDetailModal({
             <Button variant="outline" className="flex-1" onClick={onClose}>
               Zamknij
             </Button>
+            {onDelete && (
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={() => appointment && onDelete(appointment)}
+              >
+                Usuń wizytę
+              </Button>
+            )}
             <Button
               className="flex-1 gradient-brand shadow-button"
               onClick={() => appointment && onEdit?.(appointment)}

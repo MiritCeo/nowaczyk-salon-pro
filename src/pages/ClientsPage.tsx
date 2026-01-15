@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Phone, Mail, Car, ChevronRight } from 'lucide-react';
+import { Plus, Users, Phone, Mail, Car, ChevronRight, Trash2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { SearchBar } from '@/components/SearchBar';
 import { EmptyState } from '@/components/EmptyState';
@@ -111,6 +111,26 @@ export default function ClientsPage() {
     navigate(`/clients/${clientId}`);
   };
 
+  const handleDeleteClient = async (client: Client) => {
+    if (!confirm(`Czy na pewno chcesz usunąć klienta ${client.firstName} ${client.lastName}?`)) {
+      return;
+    }
+    try {
+      await clientsAPI.delete(client.id);
+      toast({
+        title: "Klient usunięty",
+        description: `${client.firstName} ${client.lastName} został usunięty.`,
+      });
+      fetchClients();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się usunąć klienta',
+      });
+    }
+  };
+
   return (
     <AppLayout>
       <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
@@ -155,7 +175,7 @@ export default function ClientsPage() {
                     <TableHead className="hidden lg:table-cell">Email</TableHead>
                     <TableHead className="hidden sm:table-cell">Pojazdy</TableHead>
                     <TableHead className="hidden md:table-cell">Wizyty</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="w-20"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -207,7 +227,20 @@ export default function ClientsPage() {
                         <span className="text-foreground">{client.totalVisits}</span>
                       </TableCell>
                       <TableCell>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClient(client);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

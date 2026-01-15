@@ -210,6 +210,25 @@ export default function AppointmentsPage() {
     }
   };
 
+  const handleDeleteAppointment = async (appointment: Appointment) => {
+    if (!confirm('Czy na pewno chcesz usunąć tę wizytę?')) return;
+    try {
+      await appointmentsAPI.delete(appointment.id);
+      toast({
+        title: "Wizyta usunięta",
+        description: "Wizyta została usunięta.",
+      });
+      setSelectedAppointment(null);
+      fetchAppointments();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się usunąć wizyty',
+      });
+    }
+  };
+
   const handleSelectAppointment = async (id: string) => {
     try {
       const response = await appointmentsAPI.getOne(id);
@@ -427,6 +446,7 @@ export default function AppointmentsPage() {
           setSelectedAppointment(null);
           setEditingAppointment(appointment);
         }}
+        onDelete={handleDeleteAppointment}
       />
     </AppLayout>
   );

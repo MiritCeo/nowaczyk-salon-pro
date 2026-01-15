@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
   const [showNewService, setShowNewService] = useState(false);
+  const [editingService, setEditingService] = useState<any | null>(null);
   const [showNewEmployee, setShowNewEmployee] = useState(false);
   const [services, setServices] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
@@ -59,6 +60,45 @@ export default function SettingsPage() {
         variant: 'destructive',
         title: 'Błąd',
         description: error.response?.data?.error || 'Nie udało się dodać usługi',
+      });
+    }
+  };
+
+  const handleUpdateService = async (data: any) => {
+    if (!editingService) return;
+    try {
+      await servicesAPI.update(editingService.id.toString(), data);
+      toast({
+        title: "Usługa zaktualizowana",
+        description: `${data.name} została zaktualizowana.`,
+      });
+      setEditingService(null);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się zaktualizować usługi',
+      });
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!editingService) return;
+    if (!confirm('Czy na pewno chcesz usunąć tę usługę?')) return;
+    try {
+      await servicesAPI.delete(editingService.id.toString());
+      toast({
+        title: "Usługa usunięta",
+        description: `${editingService.name} została usunięta.`,
+      });
+      setEditingService(null);
+      fetchData();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się usunąć usługi',
       });
     }
   };
@@ -128,9 +168,12 @@ export default function SettingsPage() {
               </div>
             ) : (
               services.map((service) => (
-              <button
+              <div
                 key={service.id}
-                className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/30 transition-all text-left"
+                role="button"
+                tabIndex={0}
+                onClick={() => setEditingService(service)}
+                className="flex items-center justify-between p-4 rounded-lg bg-background/50 border border-border/50 hover:border-primary/30 transition-all text-left cursor-pointer"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -151,7 +194,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </button>
+              </div>
               ))
             )}
           </CardContent>
@@ -216,6 +259,19 @@ export default function SettingsPage() {
           open={showNewService} 
           onClose={() => setShowNewService(false)}
           onSave={handleSaveService}
+        />
+        <NewServiceModal
+          open={!!editingService}
+          onClose={() => setEditingService(null)}
+          onSave={handleUpdateService}
+          onDelete={handleDeleteService}
+          initialData={editingService ? {
+            name: editingService.name,
+            description: editingService.description,
+            duration: editingService.duration,
+            price: editingService.price,
+            category: editingService.category,
+          } : undefined}
         />
 
         <NewEmployeeModal
