@@ -21,6 +21,7 @@ interface AppointmentDetailModalProps {
   onStatusChange?: (id: string, status: AppointmentStatus) => void;
   onEdit?: (appointment: Appointment) => void;
   onDelete?: (appointment: Appointment) => void;
+  onOpenProtocol?: (appointment: Appointment) => void;
 }
 
 const statusOptions: { value: AppointmentStatus; label: string }[] = [
@@ -37,7 +38,8 @@ export function AppointmentDetailModal({
   onClose,
   onStatusChange,
   onEdit,
-  onDelete
+  onDelete,
+  onOpenProtocol
 }: AppointmentDetailModalProps) {
   if (!appointment) return null;
   const { user } = useAuth();
@@ -277,26 +279,36 @@ export function AppointmentDetailModal({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" className="flex-1" onClick={onClose}>
-              Zamknij
-            </Button>
-            {onDelete && (
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={onClose}>
+                Zamknij
+              </Button>
+              {onDelete && (
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => appointment && onDelete(appointment)}
+                >
+                  Usuń wizytę
+                </Button>
+              )}
               <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={() => appointment && onDelete(appointment)}
+                className="flex-1 gradient-brand shadow-button"
+                onClick={() => appointment && onEdit?.(appointment)}
+                disabled={!onEdit}
               >
-                Usuń wizytę
+                Edytuj wizytę
+              </Button>
+            </div>
+            {onOpenProtocol && (
+              <Button
+                variant="secondary"
+                onClick={() => appointment && onOpenProtocol(appointment)}
+              >
+                Dodaj protokół
               </Button>
             )}
-            <Button
-              className="flex-1 gradient-brand shadow-button"
-              onClick={() => appointment && onEdit?.(appointment)}
-              disabled={!onEdit}
-            >
-              Edytuj wizytę
-            </Button>
           </div>
         </div>
       </DialogContent>

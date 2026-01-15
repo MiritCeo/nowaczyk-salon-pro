@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, ClipboardList } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AppointmentCard } from '@/components/AppointmentCard';
@@ -30,6 +31,7 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchAppointments();
@@ -395,6 +397,7 @@ export default function AppointmentsPage() {
                       key={appointment.id} 
                       appointment={appointment}
                       onClick={() => handleSelectAppointment(appointment.id)}
+                      onOpenProtocol={(selected) => navigate(`/appointments/${selected.id}/protocol`)}
                     />
                   ))}
                 </div>
@@ -447,6 +450,10 @@ export default function AppointmentsPage() {
           setEditingAppointment(appointment);
         }}
         onDelete={handleDeleteAppointment}
+        onOpenProtocol={(appointment) => {
+          setSelectedAppointment(null);
+          navigate(`/appointments/${appointment.id}/protocol`);
+        }}
       />
     </AppLayout>
   );

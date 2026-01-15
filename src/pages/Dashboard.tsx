@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Users, Clock, TrendingUp, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { KpiCard } from '@/components/ui/KpiCard';
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const [tomorrowAppointments, setTomorrowAppointments] = useState<Appointment[]>([]);
   const [stats, setStats] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -389,6 +391,7 @@ export default function Dashboard() {
                   key={appointment.id} 
                   appointment={appointment}
                   onClick={() => handleSelectAppointment(appointment.id)}
+                  onOpenProtocol={(selected) => navigate(`/appointments/${selected.id}/protocol`)}
                 />
               ))}
             </div>
@@ -411,6 +414,7 @@ export default function Dashboard() {
                   appointment={appointment}
                   compact
                   onClick={() => handleSelectAppointment(appointment.id)}
+                  onOpenProtocol={(selected) => navigate(`/appointments/${selected.id}/protocol`)}
                 />
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { Clock, Car, Wrench, Phone, User } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Appointment } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,9 +9,10 @@ interface AppointmentCardProps {
   appointment: Appointment;
   onClick?: () => void;
   compact?: boolean;
+  onOpenProtocol?: (appointment: Appointment) => void;
 }
 
-export function AppointmentCard({ appointment, onClick, compact = false }: AppointmentCardProps) {
+export function AppointmentCard({ appointment, onClick, compact = false, onOpenProtocol }: AppointmentCardProps) {
   const { user } = useAuth();
   const canSeePrices = user?.role === 'admin';
   // Użyj danych z appointment jeśli są dostępne, w przeciwnym razie użyj ID
@@ -49,6 +51,20 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
           </div>
           <StatusBadge status={appointment.status} />
         </div>
+        {onOpenProtocol && (
+          <div className="mt-2 flex justify-end">
+            <Button
+              size="sm"
+              className="h-9 px-3 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenProtocol(appointment);
+              }}
+            >
+              Dodaj protokół
+            </Button>
+          </div>
+        )}
       </button>
     );
   }
@@ -63,7 +79,7 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
         'hover:border-primary/30 transition-all duration-200 group card-automotive'
       )}
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
             <Clock className="w-5 h-5 text-primary" />
@@ -108,7 +124,7 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
         </p>
       )}
 
-      <div className="mt-3 pt-3 border-t border-border/50 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-2">
         <a 
           href={`tel:${client.phone}`}
           onClick={(e) => e.stopPropagation()}
@@ -117,6 +133,18 @@ export function AppointmentCard({ appointment, onClick, compact = false }: Appoi
           <Phone className="w-3.5 h-3.5" />
           Zadzwoń
         </a>
+        {onOpenProtocol && (
+          <Button
+            size="sm"
+            className="ml-auto h-9 px-3 text-xs sm:text-sm bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenProtocol(appointment);
+            }}
+          >
+            Dodaj protokół
+          </Button>
+        )}
       </div>
     </div>
   );

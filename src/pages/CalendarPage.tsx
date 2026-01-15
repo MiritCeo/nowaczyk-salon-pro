@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CalendarView } from '@/components/CalendarView';
 import { NewAppointmentModal } from '@/components/modals/NewAppointmentModal';
@@ -14,6 +15,7 @@ export default function CalendarPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchAppointments();
@@ -300,6 +302,7 @@ export default function CalendarPage() {
           setEditingAppointment(appointment);
         }}
         onDelete={handleDeleteAppointment}
+        onOpenProtocol={(appointment) => navigate(`/appointments/${appointment.id}/protocol`)}
       />
     </AppLayout>
   );
