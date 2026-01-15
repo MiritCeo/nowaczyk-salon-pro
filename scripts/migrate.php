@@ -50,6 +50,8 @@ tryQuery($db, "
         accessories TEXT DEFAULT NULL,
         notes TEXT DEFAULT NULL,
         damages_json MEDIUMTEXT DEFAULT NULL,
+        photos_intake_json MEDIUMTEXT DEFAULT NULL,
+        photos_release_json MEDIUMTEXT DEFAULT NULL,
         client_signature LONGTEXT DEFAULT NULL,
         employee_signature LONGTEXT DEFAULT NULL,
         created_by INT DEFAULT NULL,
@@ -63,5 +65,9 @@ tryQuery($db, "
         FOREIGN KEY (updated_by) REFERENCES employees(id) ON DELETE SET NULL
     )
 ");
+
+// Appointment protocols: photos columns
+tryQuery($db, "ALTER TABLE appointment_protocols ADD COLUMN photos_intake_json MEDIUMTEXT DEFAULT NULL");
+tryQuery($db, "ALTER TABLE appointment_protocols ADD COLUMN photos_release_json MEDIUMTEXT DEFAULT NULL");
 
 echo "OK\n";

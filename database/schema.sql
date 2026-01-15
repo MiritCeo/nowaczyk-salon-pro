@@ -116,6 +116,8 @@ CREATE TABLE IF NOT EXISTS appointment_protocols (
     accessories TEXT DEFAULT NULL,
     notes TEXT DEFAULT NULL,
     damages_json MEDIUMTEXT DEFAULT NULL,
+    photos_intake_json MEDIUMTEXT DEFAULT NULL,
+    photos_release_json MEDIUMTEXT DEFAULT NULL,
     client_signature LONGTEXT DEFAULT NULL,
     employee_signature LONGTEXT DEFAULT NULL,
     created_by INT DEFAULT NULL,

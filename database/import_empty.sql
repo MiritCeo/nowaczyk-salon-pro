@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS `employees` (
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL UNIQUE,
   `password` varchar(255) NOT NULL,
+  `notification_email` varchar(255) DEFAULT NULL,
+  `notification_phone` varchar(30) DEFAULT NULL,
   `role` enum('admin','employee') NOT NULL DEFAULT 'employee',
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -97,6 +99,7 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   `status` enum('scheduled','in-progress','completed','cancelled','no-show') NOT NULL DEFAULT 'scheduled',
   `notes` text DEFAULT NULL,
   `price` decimal(10,2) DEFAULT NULL,
+  `extra_cost` decimal(10,2) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
@@ -113,6 +116,20 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   CONSTRAINT `fk_appointments_car` FOREIGN KEY (`car_id`) REFERENCES `cars` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_appointments_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_appointments_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabela: appointment_services (Usługi wizyt)
+CREATE TABLE IF NOT EXISTS `appointment_services` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `appointment_id` int(11) NOT NULL,
+  `service_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_appointment_service` (`appointment_id`, `service_id`),
+  KEY `idx_appointment_id` (`appointment_id`),
+  KEY `idx_service_id` (`service_id`),
+  CONSTRAINT `fk_appointment_services_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_appointment_services_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Tabela: notifications (Powiadomienia)
@@ -138,8 +155,8 @@ CREATE TABLE IF NOT EXISTS `notifications` (
 -- Hasło: password123
 -- Hash: $2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi
 -- ⚠️ ZMIEŃ HASŁO PO PIERWSZYM LOGOWANIU!
-INSERT INTO `employees` (`name`, `email`, `password`, `role`, `is_active`, `created_at`) VALUES
-('Administrator', 'admin@nowaczyk.pl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1, NOW())
+INSERT INTO `employees` (`name`, `email`, `password`, `role`, `is_active`, `notification_email`, `notification_phone`, `created_at`) VALUES
+('Administrator', 'admin@nowaczyk.pl', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1, 'admin@nowaczyk.pl', NULL, NOW())
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
 -- ============================================

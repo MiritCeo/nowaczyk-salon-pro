@@ -19,6 +19,22 @@ function mapProtocolRow($row) {
         }
     }
 
+    $row['photos_intake'] = [];
+    if (!empty($row['photos_intake_json'])) {
+        $decoded = json_decode($row['photos_intake_json'], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $row['photos_intake'] = $decoded;
+        }
+    }
+
+    $row['photos_release'] = [];
+    if (!empty($row['photos_release_json'])) {
+        $decoded = json_decode($row['photos_release_json'], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            $row['photos_release'] = $decoded;
+        }
+    }
+
     return [
         'id' => $row['id'],
         'appointment_id' => $row['appointment_id'],
@@ -27,6 +43,8 @@ function mapProtocolRow($row) {
         'accessories' => $row['accessories'],
         'notes' => $row['notes'],
         'damages' => $row['damages'],
+        'photos_intake' => $row['photos_intake'],
+        'photos_release' => $row['photos_release'],
         'client_signature' => $row['client_signature'],
         'employee_signature' => $row['employee_signature'],
         'created_by' => $row['created_by'],
@@ -57,12 +75,24 @@ function handleUpsertAppointmentProtocol($db, $appointmentId, $user) {
         $damages = [];
     }
 
+    $photosIntake = $data['photos_intake'] ?? $data['photosIntake'] ?? [];
+    if (!is_array($photosIntake)) {
+        $photosIntake = [];
+    }
+
+    $photosRelease = $data['photos_release'] ?? $data['photosRelease'] ?? [];
+    if (!is_array($photosRelease)) {
+        $photosRelease = [];
+    }
+
     $payload = [
         'mileage' => $data['mileage'] ?? null,
         'fuel_level' => $data['fuel_level'] ?? ($data['fuelLevel'] ?? null),
         'accessories' => $data['accessories'] ?? null,
         'notes' => $data['notes'] ?? null,
         'damages_json' => json_encode($damages, JSON_UNESCAPED_UNICODE),
+        'photos_intake_json' => json_encode($photosIntake, JSON_UNESCAPED_UNICODE),
+        'photos_release_json' => json_encode($photosRelease, JSON_UNESCAPED_UNICODE),
         'client_signature' => $data['client_signature'] ?? ($data['clientSignature'] ?? null),
         'employee_signature' => $data['employee_signature'] ?? ($data['employeeSignature'] ?? null),
     ];
@@ -74,7 +104,8 @@ function handleUpsertAppointmentProtocol($db, $appointmentId, $user) {
         $db->query("
             UPDATE appointment_protocols
             SET mileage = ?, fuel_level = ?, accessories = ?, notes = ?, damages_json = ?,
-                client_signature = ?, employee_signature = ?, updated_by = ?
+                photos_intake_json = ?, photos_release_json = ?, client_signature = ?, employee_signature = ?,
+                updated_by = ?
             WHERE appointment_id = ?
         ", [
             $payload['mileage'],
@@ -82,6 +113,8 @@ function handleUpsertAppointmentProtocol($db, $appointmentId, $user) {
             $payload['accessories'],
             $payload['notes'],
             $payload['damages_json'],
+            $payload['photos_intake_json'],
+            $payload['photos_release_json'],
             $payload['client_signature'],
             $payload['employee_signature'],
             $userId,
@@ -91,8 +124,8 @@ function handleUpsertAppointmentProtocol($db, $appointmentId, $user) {
         $db->query("
             INSERT INTO appointment_protocols (
                 appointment_id, mileage, fuel_level, accessories, notes, damages_json,
-                client_signature, employee_signature, created_by, updated_by
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                photos_intake_json, photos_release_json, client_signature, employee_signature, created_by, updated_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ", [
             $appointmentId,
             $payload['mileage'],
@@ -100,6 +133,8 @@ function handleUpsertAppointmentProtocol($db, $appointmentId, $user) {
             $payload['accessories'],
             $payload['notes'],
             $payload['damages_json'],
+            $payload['photos_intake_json'],
+            $payload['photos_release_json'],
             $payload['client_signature'],
             $payload['employee_signature'],
             $userId,

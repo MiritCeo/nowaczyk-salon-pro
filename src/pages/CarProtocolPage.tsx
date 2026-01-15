@@ -49,6 +49,8 @@ type ProtocolData = {
   damages: DamagePoint[];
   clientSignature?: string;
   employeeSignature?: string;
+  intakePhotos: string[];
+  releasePhotos: string[];
   createdAt: string;
 };
 
@@ -87,6 +89,8 @@ export default function CarProtocolPage() {
     damages: [],
     clientSignature: '',
     employeeSignature: '',
+    intakePhotos: [],
+    releasePhotos: [],
     createdAt: new Date().toISOString(),
   });
   const [protocol, setProtocol] = useState<ProtocolData>(() => createEmptyProtocol());
@@ -176,6 +180,8 @@ export default function CarProtocolPage() {
           damages: Array.isArray(data.damages) ? data.damages : [],
           clientSignature: data.client_signature ?? data.clientSignature ?? '',
           employeeSignature: data.employee_signature ?? data.employeeSignature ?? '',
+          intakePhotos: Array.isArray(data.photos_intake) ? data.photos_intake : [],
+          releasePhotos: Array.isArray(data.photos_release) ? data.photos_release : [],
           createdAt: data.created_at ?? new Date().toISOString(),
         });
       } catch (error: any) {
@@ -253,6 +259,8 @@ export default function CarProtocolPage() {
     const canvas = signatureCanvasRef.current;
     const context = canvas.getContext('2d');
     if (!context) return;
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
     const rect = canvas.getBoundingClientRect();
     context.beginPath();
     context.moveTo(event.clientX - rect.left, event.clientY - rect.top);
@@ -264,14 +272,18 @@ export default function CarProtocolPage() {
     const canvas = signatureCanvasRef.current;
     const context = canvas.getContext('2d');
     if (!context) return;
+    event.preventDefault();
     const rect = canvas.getBoundingClientRect();
     context.lineTo(event.clientX - rect.left, event.clientY - rect.top);
     context.stroke();
   };
 
-  const endSignature = () => {
-    if (!signatureCanvasRef.current) return;
+  const endSignature = (event?: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!signatureCanvasRef.current || !isDrawing) return;
     setIsDrawing(false);
+    if (event?.pointerId != null) {
+      signatureCanvasRef.current.releasePointerCapture(event.pointerId);
+    }
     const dataUrl = signatureCanvasRef.current.toDataURL('image/png');
     if (signatureTarget === 'client') {
       updateProtocol({ clientSignature: dataUrl });
@@ -304,6 +316,36 @@ export default function CarProtocolPage() {
     setSignatureTarget(null);
   };
 
+  const fileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const handleAddPhotos = async (kind: 'intake' | 'release', files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const dataUrls = await Promise.all(Array.from(files).map((file) => fileToDataUrl(file)));
+    if (kind === 'intake') {
+      updateProtocol({ intakePhotos: [...protocol.intakePhotos, ...dataUrls] });
+    } else {
+      updateProtocol({ releasePhotos: [...protocol.releasePhotos, ...dataUrls] });
+    }
+  };
+
+  const handleRemovePhoto = (kind: 'intake' | 'release', index: number) => {
+    if (kind === 'intake') {
+      updateProtocol({
+        intakePhotos: protocol.intakePhotos.filter((_, idx) => idx !== index),
+      });
+    } else {
+      updateProtocol({
+        releasePhotos: protocol.releasePhotos.filter((_, idx) => idx !== index),
+      });
+    }
+  };
+
   const handleSaveProtocol = async () => {
     if (!id) return;
     const payload = {
@@ -314,6 +356,8 @@ export default function CarProtocolPage() {
       damages: protocol.damages,
       client_signature: protocol.clientSignature || null,
       employee_signature: protocol.employeeSignature || null,
+      photos_intake: protocol.intakePhotos,
+      photos_release: protocol.releasePhotos,
     };
     try {
       const response = await appointmentProtocolsAPI.save(id, payload);
@@ -327,6 +371,8 @@ export default function CarProtocolPage() {
           damages: Array.isArray(data.damages) ? data.damages : [],
           clientSignature: data.client_signature ?? data.clientSignature ?? '',
           employeeSignature: data.employee_signature ?? data.employeeSignature ?? '',
+          intakePhotos: Array.isArray(data.photos_intake) ? data.photos_intake : [],
+          releasePhotos: Array.isArray(data.photos_release) ? data.photos_release : [],
           createdAt: data.created_at ?? new Date().toISOString(),
         });
       }
@@ -374,10 +420,7 @@ export default function CarProtocolPage() {
     return canvas.toDataURL('image/png');
   };
 
-  const handlePrint = async () => {
-    const annotatedImage = await renderAnnotatedImage();
-    const printWindow = window.open('', '_blank', 'width=1200,height=900');
-    if (!printWindow) return;
+  const buildPrintHtml = (annotatedImage: string) => {
     const client = appointment?.client;
     const car = appointment?.car;
     const damageRows = protocol.damages
@@ -387,7 +430,8 @@ export default function CarProtocolPage() {
         return `<tr><td>${index + 1}</td><td>${typeLabel}</td><td>${note}</td></tr>`;
       })
       .join('');
-    printWindow.document.write(`
+
+    return `
       <html>
         <head>
           <title>Protokół odbioru auta</title>
@@ -465,13 +509,55 @@ export default function CarProtocolPage() {
               </div>
             </div>
           </div>
-          <script>
-            window.onload = () => window.print();
-          </script>
         </body>
       </html>
-    `);
-    printWindow.document.close();
+    `;
+  };
+
+  const handlePrint = async () => {
+    const annotatedImage = await renderAnnotatedImage();
+    const html = buildPrintHtml(annotatedImage);
+    const printWindow = window.open('', '_blank', 'width=1200,height=900');
+
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+      return;
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      toast({
+        variant: 'destructive',
+        title: 'Drukowanie',
+        description: 'Przeglądarka zablokowała okno drukowania.',
+      });
+      return;
+    }
+    doc.open();
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } finally {
+        setTimeout(() => iframe.remove(), 1000);
+      }
+    }, 300);
   };
 
   const handleClearAllPoints = () => {
@@ -724,6 +810,82 @@ export default function CarProtocolPage() {
               </p>
             </div>
 
+            <div className="rounded-lg border p-4 space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Car className="w-4 h-4" />
+                Zdjęcia auta
+              </div>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Przyjęcie pojazdu</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      id="intake-photos"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => handleAddPhotos('intake', event.target.files)}
+                    />
+                    <Button asChild type="button" variant="outline" size="sm">
+                      <label htmlFor="intake-photos">Dodaj zdjęcia</label>
+                    </Button>
+                  </div>
+                  {protocol.intakePhotos.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {protocol.intakePhotos.map((photo, index) => (
+                        <div key={`${photo}-${index}`} className="relative group">
+                          <img src={photo} alt="Zdjęcie przyjęcia" className="h-24 w-full rounded-md object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto('intake', index)}
+                            className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
+                          >
+                            Usuń
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Wydanie pojazdu</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      id="release-photos"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => handleAddPhotos('release', event.target.files)}
+                    />
+                    <Button asChild type="button" variant="outline" size="sm">
+                      <label htmlFor="release-photos">Dodaj zdjęcia</label>
+                    </Button>
+                  </div>
+                  {protocol.releasePhotos.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {protocol.releasePhotos.map((photo, index) => (
+                        <div key={`${photo}-${index}`} className="relative group">
+                          <img src={photo} alt="Zdjęcie wydania" className="h-24 w-full rounded-md object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePhoto('release', index)}
+                            className="absolute right-1 top-1 rounded-full bg-black/60 px-2 py-1 text-xs text-white"
+                          >
+                            Usuń
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Na telefonie możesz od razu zrobić zdjęcie lub wybrać je z galerii.
+              </p>
+            </div>
+
             <Separator />
 
             <div className="flex flex-col gap-2">
@@ -751,10 +913,11 @@ export default function CarProtocolPage() {
               <canvas
                 ref={signatureCanvasRef}
                 className="w-full h-72 touch-none"
+                style={{ touchAction: 'none' }}
                 onPointerDown={handleSignaturePointerDown}
                 onPointerMove={handleSignaturePointerMove}
                 onPointerUp={endSignature}
-                onPointerLeave={endSignature}
+                onPointerCancel={endSignature}
               />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
