@@ -148,6 +148,7 @@ function handleGetAppointments($db, $user) {
         if ($hidePrices) {
             $row['price'] = null;
             $row['extra_cost'] = null;
+            $row['paid_amount'] = null;
         }
         return $row;
     }, $appointments);
@@ -197,6 +198,7 @@ function handleGetAppointment($db, $id, $user) {
     if ($hidePrices) {
         $appointment['price'] = null;
         $appointment['extra_cost'] = null;
+        $appointment['paid_amount'] = null;
     }
     
     jsonResponse(['data' => $appointment]);
@@ -338,6 +340,34 @@ function handleUpdateAppointment($db, $id) {
     jsonResponse([
         'message' => 'Wizyta została zaktualizowana',
         'data' => $appointment
+    ]);
+}
+
+function handleUpdateAppointmentPayment($db, $id, $user) {
+    if (!isset($user['role']) || $user['role'] !== 'admin') {
+        errorResponse('Brak uprawnień', 403);
+    }
+
+    $data = getRequestData();
+    validateRequired($data, ['paid_amount']);
+
+    $appointment = $db->fetchOne("SELECT * FROM appointments WHERE id = ? AND deleted_at IS NULL", [$id]);
+    if (!$appointment) {
+        errorResponse('Appointment not found', 404);
+    }
+
+    $paidAmount = (float)$data['paid_amount'];
+    if ($paidAmount < 0) {
+        errorResponse('Invalid paid amount', 400);
+    }
+
+    $db->query("UPDATE appointments SET paid_amount = ? WHERE id = ?", [$paidAmount, $id]);
+
+    $updated = $db->fetchOne("SELECT a.* FROM appointments a WHERE a.id = ?", [$id]);
+
+    jsonResponse([
+        'message' => 'Płatność została zaktualizowana',
+        'data' => $updated
     ]);
 }
 

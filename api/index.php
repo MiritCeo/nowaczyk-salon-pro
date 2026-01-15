@@ -145,6 +145,8 @@ try {
             handleUpdateAppointment($db, $segments[1]);
         } elseif ($method === 'PATCH' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'status') {
             handleUpdateAppointmentStatus($db, $segments[1]);
+        } elseif ($method === 'PATCH' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'payment') {
+            handleUpdateAppointmentPayment($db, $segments[1], $user);
         } elseif ($method === 'DELETE' && isset($segments[1])) {
             handleDeleteAppointment($db, $segments[1]);
         }

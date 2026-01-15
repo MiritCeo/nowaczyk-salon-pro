@@ -175,6 +175,9 @@ export const appointmentsAPI = {
   
   updateStatus: (id: string, status: string) => 
     api.patch(`/appointments/${id}/status`, { status }),
+
+  updatePayment: (id: string, paidAmount: number) =>
+    api.patch(`/appointments/${id}/payment`, { paid_amount: paidAmount }),
   
   delete: (id: string) => 
     api.delete(`/appointments/${id}`),

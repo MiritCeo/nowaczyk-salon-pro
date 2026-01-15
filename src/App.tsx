@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AdminRoute } from "./components/AdminRoute";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import CalendarPage from "./pages/CalendarPage";
@@ -14,6 +15,7 @@ import AppointmentsPage from "./pages/AppointmentsPage";
 import CarProtocolPage from "./pages/CarProtocolPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SettingsPage from "./pages/SettingsPage";
+import PaymentsPage from "./pages/PaymentsPage";
 import NotFound from "./pages/NotFound";
 
 // ============================================
@@ -42,6 +44,7 @@ const App = () => (
             <Route path="/appointments/:id/protocol" element={<ProtectedRoute><CarProtocolPage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="/payments" element={<ProtectedRoute><AdminRoute><PaymentsPage /></AdminRoute></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

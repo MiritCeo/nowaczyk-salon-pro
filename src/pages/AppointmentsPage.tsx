@@ -62,6 +62,7 @@ export default function AppointmentsPage() {
         notes: apt.notes || undefined,
         price: apt.price ? parseFloat(apt.price) : undefined,
         extraCost: apt.extra_cost ? parseFloat(apt.extra_cost) : undefined,
+        paidAmount: apt.paid_amount ? parseFloat(apt.paid_amount) : undefined,
         // Dodatkowe dane z API
         client: apt.first_name ? {
           firstName: apt.first_name,
@@ -248,6 +249,7 @@ export default function AppointmentsPage() {
         notes: apt.notes || undefined,
         price: apt.price ? parseFloat(apt.price) : undefined,
         extraCost: apt.extra_cost ? parseFloat(apt.extra_cost) : undefined,
+        paidAmount: apt.paid_amount ? parseFloat(apt.paid_amount) : undefined,
         client: apt.first_name ? {
           firstName: apt.first_name,
           lastName: apt.last_name,

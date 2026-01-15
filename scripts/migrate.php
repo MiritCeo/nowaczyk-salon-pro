@@ -14,6 +14,8 @@ function tryQuery($db, $sql) {
 
 // Appointments: extra_cost column
 tryQuery($db, "ALTER TABLE appointments ADD COLUMN extra_cost DECIMAL(10,2) DEFAULT NULL");
+// Appointments: paid_amount column
+tryQuery($db, "ALTER TABLE appointments ADD COLUMN paid_amount DECIMAL(10,2) DEFAULT 0");
 
 // Appointment services table
 tryQuery($db, "

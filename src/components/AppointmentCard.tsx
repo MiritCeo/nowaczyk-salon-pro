@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Appointment } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { getPaymentInfo } from '@/lib/payments';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -32,6 +33,16 @@ export function AppointmentCard({ appointment, onClick, compact = false, onOpenP
   const serviceLabel = services.length > 1
     ? `${primaryService.name} +${services.length - 1}`
     : primaryService.name;
+  const paymentInfo = canSeePrices ? getPaymentInfo(appointment) : null;
+  const paymentStatusLabel = paymentInfo
+    ? paymentInfo.status === 'paid'
+      ? 'Opłacono'
+      : paymentInfo.status === 'partial'
+        ? 'Częściowo'
+        : paymentInfo.isOverdue
+          ? 'Zaległa'
+          : 'Nieopłacona'
+    : '';
 
   if (!client || !car) return null;
 
@@ -122,6 +133,48 @@ export function AppointmentCard({ appointment, onClick, compact = false, onOpenP
         <p className="mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground italic">
           {appointment.notes}
         </p>
+      )}
+
+      {paymentInfo && totalPrice > 0 && (
+        <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Status płatności</span>
+            <span className={cn(
+              'font-medium',
+              paymentInfo.status === 'paid' && 'text-emerald-600',
+              paymentInfo.status === 'partial' && 'text-amber-600',
+              paymentInfo.status === 'unpaid' && paymentInfo.isOverdue && 'text-rose-600'
+            )}>
+              {paymentStatusLabel}
+              {paymentInfo.isOverdue && paymentInfo.overdueDays > 0 && (
+                <span className="ml-1">({paymentInfo.overdueDays} dni)</span>
+              )}
+            </span>
+          </div>
+          {paymentInfo.remaining > 0 && (
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Pozostało</span>
+              <span className={cn(
+                'font-medium',
+                paymentInfo.isOverdue && 'text-rose-600'
+              )}>
+                {paymentInfo.remaining.toFixed(2)} zł
+              </span>
+            </div>
+          )}
+          <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
+            <div
+              className={cn(
+                'h-full transition-all',
+                paymentInfo.status === 'paid' && 'bg-emerald-500',
+                paymentInfo.status === 'partial' && 'bg-amber-500',
+                paymentInfo.status === 'unpaid' && paymentInfo.isOverdue && 'bg-rose-500',
+                paymentInfo.status === 'unpaid' && !paymentInfo.isOverdue && 'bg-muted-foreground/40'
+              )}
+              style={{ width: `${paymentInfo.progress}%` }}
+            />
+          </div>
+        </div>
       )}
 
       <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-2">

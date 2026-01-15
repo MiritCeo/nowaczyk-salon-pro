@@ -4,9 +4,11 @@ import {
   Calendar, 
   Users, 
   Bell, 
-  Settings
+  Settings,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dzisiaj' },
@@ -14,15 +16,17 @@ const navItems = [
   { path: '/clients', icon: Users, label: 'Klienci' },
   { path: '/notifications', icon: Bell, label: 'Powiadomienia' },
   { path: '/settings', icon: Settings, label: 'Więcej' },
+  { path: '/payments', icon: CreditCard, label: 'Rozliczenia', adminOnly: true },
 ];
 
 export function MobileNav() {
   const location = useLocation();
+  const { user } = useAuth();
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-bottom">
       <div className="flex items-center justify-around py-2 px-2">
-        {navItems.map((item) => {
+        {navItems.filter((item) => !item.adminOnly || user?.role === 'admin').map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink

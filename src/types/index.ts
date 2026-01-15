@@ -44,6 +44,7 @@ export interface Appointment {
   notes?: string;
   price?: number;
   extraCost?: number;
+  paidAmount?: number;
   // Opcjonalne dane z API (dla wyświetlania bez dodatkowych zapytań)
   client?: Partial<Client>;
   car?: Partial<Car>;

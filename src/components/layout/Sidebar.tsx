@@ -6,7 +6,7 @@ import {
   ClipboardList, 
   Bell, 
   Settings,
-  Wrench,
+  CreditCard,
   LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const navItems = [
   { path: '/appointments', icon: ClipboardList, label: 'Wizyty' },
   { path: '/notifications', icon: Bell, label: 'Powiadomienia' },
   { path: '/settings', icon: Settings, label: 'Ustawienia' },
+  { path: '/payments', icon: CreditCard, label: 'Rozliczenia', adminOnly: true },
 ];
 
 export function Sidebar() {
@@ -46,7 +47,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
-        {navItems.map((item) => {
+        {navItems.filter((item) => !item.adminOnly || user?.role === 'admin').map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink

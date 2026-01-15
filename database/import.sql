@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   `notes` text DEFAULT NULL,
   `price` decimal(10,2) DEFAULT NULL,
   `extra_cost` decimal(10,2) DEFAULT NULL,
+  `paid_amount` decimal(10,2) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `deleted_at` timestamp NULL DEFAULT NULL,
