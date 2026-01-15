@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { appointmentsAPI } from '@/services/api';
+import { appointmentsAPI, appointmentProtocolsAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 import { Appointment } from '@/types';
 
@@ -79,7 +79,7 @@ export default function CarProtocolPage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [selectedDamageType, setSelectedDamageType] = useState(damageTypes[0].value);
   const [signatureTarget, setSignatureTarget] = useState<'client' | 'employee' | null>(null);
-  const [protocol, setProtocol] = useState<ProtocolData>({
+  const createEmptyProtocol = (): ProtocolData => ({
     mileage: '',
     fuelLevel: '',
     accessories: '',
@@ -89,13 +89,9 @@ export default function CarProtocolPage() {
     employeeSignature: '',
     createdAt: new Date().toISOString(),
   });
+  const [protocol, setProtocol] = useState<ProtocolData>(() => createEmptyProtocol());
 
   const carImageUrl = '/autoprotocol.png';
-
-  const storageKey = useMemo(() => {
-    if (!id) return null;
-    return `car-protocol:${id}`;
-  }, [id]);
 
   useEffect(() => {
     const fetchAppointment = async () => {
@@ -163,26 +159,36 @@ export default function CarProtocolPage() {
   }, [id, navigate, toast]);
 
   useEffect(() => {
-    if (!storageKey) return;
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
+    if (!id) return;
+    const fetchProtocol = async () => {
       try {
-        const parsed = JSON.parse(saved) as ProtocolData;
+        const response = await appointmentProtocolsAPI.get(id);
+        const data = response.data.data;
+        if (!data) {
+          setProtocol(createEmptyProtocol());
+          return;
+        }
         setProtocol({
-          mileage: parsed.mileage ?? '',
-          fuelLevel: parsed.fuelLevel ?? '',
-          accessories: parsed.accessories ?? '',
-          notes: parsed.notes ?? '',
-          damages: parsed.damages ?? [],
-          clientSignature: parsed.clientSignature ?? parsed.signature ?? '',
-          employeeSignature: parsed.employeeSignature ?? '',
-          createdAt: parsed.createdAt ?? new Date().toISOString(),
+          mileage: data.mileage ?? '',
+          fuelLevel: data.fuel_level ?? data.fuelLevel ?? '',
+          accessories: data.accessories ?? '',
+          notes: data.notes ?? '',
+          damages: Array.isArray(data.damages) ? data.damages : [],
+          clientSignature: data.client_signature ?? data.clientSignature ?? '',
+          employeeSignature: data.employee_signature ?? data.employeeSignature ?? '',
+          createdAt: data.created_at ?? new Date().toISOString(),
         });
-      } catch {
-        setProtocol((prev) => ({ ...prev, createdAt: new Date().toISOString() }));
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Błąd',
+          description: error.response?.data?.error || 'Nie udało się pobrać protokołu',
+        });
       }
-    }
-  }, [storageKey]);
+    };
+
+    fetchProtocol();
+  }, [id, toast]);
 
   useEffect(() => {
     if (!signatureTarget || !signatureCanvasRef.current) return;
@@ -298,17 +304,43 @@ export default function CarProtocolPage() {
     setSignatureTarget(null);
   };
 
-  const handleSaveProtocol = () => {
-    if (!storageKey) return;
-    const payload: ProtocolData = {
-      ...protocol,
-      createdAt: protocol.createdAt || new Date().toISOString(),
+  const handleSaveProtocol = async () => {
+    if (!id) return;
+    const payload = {
+      mileage: protocol.mileage || null,
+      fuel_level: protocol.fuelLevel || null,
+      accessories: protocol.accessories || null,
+      notes: protocol.notes || null,
+      damages: protocol.damages,
+      client_signature: protocol.clientSignature || null,
+      employee_signature: protocol.employeeSignature || null,
     };
-    localStorage.setItem(storageKey, JSON.stringify(payload));
-    toast({
-      title: 'Zapisano protokół',
-      description: 'Dane zostały zapisane lokalnie.',
-    });
+    try {
+      const response = await appointmentProtocolsAPI.save(id, payload);
+      const data = response.data.data;
+      if (data) {
+        setProtocol({
+          mileage: data.mileage ?? '',
+          fuelLevel: data.fuel_level ?? data.fuelLevel ?? '',
+          accessories: data.accessories ?? '',
+          notes: data.notes ?? '',
+          damages: Array.isArray(data.damages) ? data.damages : [],
+          clientSignature: data.client_signature ?? data.clientSignature ?? '',
+          employeeSignature: data.employee_signature ?? data.employeeSignature ?? '',
+          createdAt: data.created_at ?? new Date().toISOString(),
+        });
+      }
+      toast({
+        title: 'Zapisano protokół',
+        description: 'Dane zostały zapisane w bazie.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: error.response?.data?.error || 'Nie udało się zapisać protokołu',
+      });
+    }
   };
 
   const renderAnnotatedImage = async () => {

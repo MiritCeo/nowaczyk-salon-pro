@@ -40,4 +40,28 @@ tryQuery($db, "
 tryQuery($db, "ALTER TABLE employees ADD COLUMN notification_email VARCHAR(255) DEFAULT NULL");
 tryQuery($db, "ALTER TABLE employees ADD COLUMN notification_phone VARCHAR(30) DEFAULT NULL");
 
+// Appointment protocols table
+tryQuery($db, "
+    CREATE TABLE IF NOT EXISTS appointment_protocols (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        appointment_id INT NOT NULL,
+        mileage VARCHAR(50) DEFAULT NULL,
+        fuel_level VARCHAR(20) DEFAULT NULL,
+        accessories TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        damages_json MEDIUMTEXT DEFAULT NULL,
+        client_signature LONGTEXT DEFAULT NULL,
+        employee_signature LONGTEXT DEFAULT NULL,
+        created_by INT DEFAULT NULL,
+        updated_by INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_appointment_protocol (appointment_id),
+        INDEX idx_protocol_appointment (appointment_id),
+        FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES employees(id) ON DELETE SET NULL,
+        FOREIGN KEY (updated_by) REFERENCES employees(id) ON DELETE SET NULL
+    )
+");
+
 echo "OK\n";

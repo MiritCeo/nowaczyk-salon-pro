@@ -183,4 +183,12 @@ export const appointmentsAPI = {
     api.get('/appointments/stats'),
 };
 
+// Appointment Protocols API
+export const appointmentProtocolsAPI = {
+  get: (appointmentId: string) =>
+    api.get(`/appointments/${appointmentId}/protocol`),
+  save: (appointmentId: string, data: any) =>
+    api.put(`/appointments/${appointmentId}/protocol`, data),
+};
+
 export default api;

@@ -61,7 +61,7 @@ export function AppointmentCard({ appointment, onClick, compact = false, onOpenP
                 onOpenProtocol(appointment);
               }}
             >
-              Dodaj protokół
+              Otwórz protokół
             </Button>
           </div>
         )}
@@ -142,7 +142,7 @@ export function AppointmentCard({ appointment, onClick, compact = false, onOpenP
               onOpenProtocol(appointment);
             }}
           >
-            Dodaj protokół
+            Otwórz protokół
           </Button>
         )}
       </div>

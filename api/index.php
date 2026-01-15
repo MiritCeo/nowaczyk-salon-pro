@@ -129,6 +129,12 @@ try {
         
         if ($method === 'GET' && isset($segments[1]) && $segments[1] === 'stats') {
             handleGetAppointmentStats($db);
+        } elseif ($method === 'GET' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'protocol') {
+            require 'routes/appointment_protocols.php';
+            handleGetAppointmentProtocol($db, $segments[1]);
+        } elseif ($method === 'PUT' && isset($segments[1]) && isset($segments[2]) && $segments[2] === 'protocol') {
+            require 'routes/appointment_protocols.php';
+            handleUpsertAppointmentProtocol($db, $segments[1], $user);
         } elseif ($method === 'GET' && !isset($segments[1])) {
             handleGetAppointments($db, $user);
         } elseif ($method === 'GET' && isset($segments[1])) {

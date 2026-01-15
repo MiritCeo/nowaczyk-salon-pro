@@ -1,12 +1,22 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, Phone, Mail, Car, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, Users, Phone, Mail, Car, Trash2, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { SearchBar } from '@/components/SearchBar';
 import { EmptyState } from '@/components/EmptyState';
 import { NewClientModal } from '@/components/modals/NewClientModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -24,6 +34,7 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -182,8 +193,7 @@ export default function ClientsPage() {
                   {filteredClients.map((client) => (
                     <TableRow 
                       key={client.id} 
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleClientClick(client.id)}
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -229,17 +239,23 @@ export default function ClientsPage() {
                       <TableCell>
                         <div className="flex items-center justify-end gap-2">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClient(client);
-                            }}
+                            variant="outline"
+                            size="sm"
+                            className="h-10 px-3"
+                            onClick={() => handleClientClick(client.id)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <ArrowRight className="w-4 h-4 mr-2" />
+                            Szczegóły
                           </Button>
-                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-10 px-3"
+                            onClick={() => setClientToDelete(client)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Usuń klienta
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -269,6 +285,31 @@ export default function ClientsPage() {
         onClose={() => setShowNewClient(false)}
         onSave={handleSaveClient}
       />
+      <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usuń klienta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {clientToDelete
+                ? `Czy na pewno chcesz usunąć klienta ${clientToDelete.firstName} ${clientToDelete.lastName}?`
+                : 'Czy na pewno chcesz usunąć tego klienta?'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (clientToDelete) {
+                  handleDeleteClient(clientToDelete);
+                }
+                setClientToDelete(null);
+              }}
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

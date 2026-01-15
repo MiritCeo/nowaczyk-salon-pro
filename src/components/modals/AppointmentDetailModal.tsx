@@ -306,7 +306,7 @@ export function AppointmentDetailModal({
                 variant="secondary"
                 onClick={() => appointment && onOpenProtocol(appointment)}
               >
-                Dodaj protokół
+                Otwórz protokół
               </Button>
             )}
           </div>

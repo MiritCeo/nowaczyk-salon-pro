@@ -107,6 +107,28 @@ CREATE TABLE IF NOT EXISTS appointment_services (
     INDEX idx_service (service_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Tabela protokołów odbioru pojazdu
+CREATE TABLE IF NOT EXISTS appointment_protocols (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    mileage VARCHAR(50) DEFAULT NULL,
+    fuel_level VARCHAR(20) DEFAULT NULL,
+    accessories TEXT DEFAULT NULL,
+    notes TEXT DEFAULT NULL,
+    damages_json MEDIUMTEXT DEFAULT NULL,
+    client_signature LONGTEXT DEFAULT NULL,
+    employee_signature LONGTEXT DEFAULT NULL,
+    created_by INT DEFAULT NULL,
+    updated_by INT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_appointment_protocol (appointment_id),
+    INDEX idx_protocol_appointment (appointment_id),
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES employees(id) ON DELETE SET NULL,
+    FOREIGN KEY (updated_by) REFERENCES employees(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabela powiadomień (notifications)
 CREATE TABLE IF NOT EXISTS notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,

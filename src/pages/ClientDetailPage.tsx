@@ -391,6 +391,7 @@ export default function ClientDetailPage() {
                         <TableHead>Usługa</TableHead>
                         <TableHead className="hidden sm:table-cell">Cena</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead className="w-32"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -425,6 +426,15 @@ export default function ClientDetailPage() {
                             </TableCell>
                             <TableCell>
                               <StatusBadge status={appointment.status} />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/appointments/${appointment.id}/protocol`)}
+                              >
+                                Otwórz protokół
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
