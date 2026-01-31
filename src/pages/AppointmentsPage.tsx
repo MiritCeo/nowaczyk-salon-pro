@@ -303,6 +303,17 @@ export default function AppointmentsPage() {
     }
   };
 
+  const handlePaymentChange = (id: string, paidAmount: number) => {
+    setAppointments((prev) =>
+      prev.map((appointment) =>
+        appointment.id === id ? { ...appointment, paidAmount } : appointment
+      )
+    );
+    setSelectedAppointment((prev) =>
+      prev && prev.id === id ? { ...prev, paidAmount } : prev
+    );
+  };
+
   // Group by date
   const groupedAppointments = useMemo(() => {
     const groups: { [key: string]: typeof filteredAppointments } = {};
@@ -340,7 +351,7 @@ export default function AppointmentsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold">Wizyty</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold page-title">Wizyty</h1>
             <p className="text-muted-foreground">
               {appointments.length} wizyt w systemie
             </p>
@@ -399,6 +410,7 @@ export default function AppointmentsPage() {
                       key={appointment.id} 
                       appointment={appointment}
                       onClick={() => handleSelectAppointment(appointment.id)}
+                      onPaymentChange={handlePaymentChange}
                       onOpenProtocol={(selected) => navigate(`/appointments/${selected.id}/protocol`)}
                     />
                   ))}
@@ -447,6 +459,7 @@ export default function AppointmentsPage() {
         open={!!selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
         onStatusChange={handleStatusChange}
+        onPaymentChange={handlePaymentChange}
         onEdit={(appointment) => {
           setSelectedAppointment(null);
           setEditingAppointment(appointment);

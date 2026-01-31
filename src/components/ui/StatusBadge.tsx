@@ -9,23 +9,23 @@ interface StatusBadgeProps {
 const statusConfig: Record<AppointmentStatus, { label: string; className: string }> = {
   'scheduled': { 
     label: 'Zaplanowana', 
-    className: 'bg-primary/20 text-primary border-primary/30' 
+    className: 'bg-primary/15 text-primary border-primary/40' 
   },
   'in-progress': { 
     label: 'W trakcie', 
-    className: 'bg-status-in-progress/20 text-status-in-progress border-status-in-progress/30' 
+    className: 'bg-status-in-progress/15 text-status-in-progress border-status-in-progress/40' 
   },
   'completed': { 
     label: 'Zakończona', 
-    className: 'bg-status-completed/20 text-status-completed border-status-completed/30' 
+    className: 'bg-status-completed/15 text-status-completed border-status-completed/40' 
   },
   'cancelled': { 
     label: 'Anulowana', 
-    className: 'bg-status-cancelled/20 text-status-cancelled border-status-cancelled/30' 
+    className: 'bg-status-cancelled/15 text-status-cancelled border-status-cancelled/40' 
   },
   'no-show': { 
     label: 'Nieobecność', 
-    className: 'bg-status-no-show/20 text-status-no-show border-status-no-show/30' 
+    className: 'bg-status-no-show/15 text-status-no-show border-status-no-show/40' 
   },
 };
 
@@ -35,7 +35,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span 
       className={cn(
-        'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border',
+        'inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold border',
         config.className,
         className
       )}

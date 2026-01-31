@@ -1,7 +1,7 @@
 import { Client, Car, Service, Appointment, Employee } from '@/types';
 
 export const mockEmployees: Employee[] = [
-  { id: 'emp-1', name: 'Michał Nowaczyk', role: 'admin', email: 'michal@nowaczyk.pl' },
+  { id: 'emp-1', name: 'Car22 Admin', role: 'admin', email: 'michal@nowaczyk.pl' },
   { id: 'emp-2', name: 'Tomasz Kowalski', role: 'employee', email: 'tomasz@nowaczyk.pl' },
 ];
 

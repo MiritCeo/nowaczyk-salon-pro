@@ -1,5 +1,5 @@
 import { Bell, Search } from 'lucide-react';
-import logo from '@/assets/logo.jpg';
+const logo = new URL('../../../app-logo.png', import.meta.url).href;
 import { Button } from '@/components/ui/button';
 
 export function MobileHeader() {
@@ -7,10 +7,10 @@ export function MobileHeader() {
     <header className="lg:hidden sticky top-0 z-40 bg-background/95 backdrop-blur-lg border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Nowaczyk Auto Kosmetyka" className="w-9 h-9 rounded-lg" />
+          <img src={logo} alt="Car22" className="w-9 h-9 rounded-lg" />
           <div>
-            <h1 className="font-bold text-sm">Nowaczyk</h1>
-            <p className="text-[10px] text-primary font-medium uppercase tracking-wider">Auto Kosmetyka</p>
+            <h1 className="font-bold text-sm">Car22</h1>
+            <p className="text-[10px] text-primary font-medium uppercase tracking-wider">Demo Platform</p>
           </div>
         </div>
         

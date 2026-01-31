@@ -54,7 +54,7 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold">Powiadomienia</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold page-title">Powiadomienia</h1>
             <p className="text-muted-foreground">
               {mockNotifications.filter(n => !n.read).length} nieprzeczytanych
             </p>

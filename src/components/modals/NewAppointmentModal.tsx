@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { clientsAPI, servicesAPI, employeesAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { NewServiceModal } from '@/components/modals/NewServiceModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface NewAppointmentModalProps {
   open: boolean;
@@ -45,8 +47,10 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showNewService, setShowNewService] = useState(false);
   const { user } = useAuth();
   const canSeePrices = user?.role === 'admin';
+  const { toast } = useToast();
   const selectedServices = services.filter(service =>
     service.id != null && formData.serviceIds.includes(service.id.toString())
   );
@@ -143,6 +147,32 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
     }
   };
 
+  const handleCreateService = async (data: any) => {
+    try {
+      const response = await servicesAPI.create(data);
+      const created = response.data?.data;
+      if (created?.id != null) {
+        const newId = created.id.toString();
+        setFormData(prev => ({
+          ...prev,
+          serviceIds: prev.serviceIds.includes(newId) ? prev.serviceIds : [...prev.serviceIds, newId],
+        }));
+      }
+      const servicesRes = await servicesAPI.getAll({ active_only: 'true' });
+      setServices(servicesRes.data?.data || []);
+      toast({
+        title: 'Usługa dodana',
+        description: 'Nowa usługa została dodana do bazy.',
+      });
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: err.response?.data?.error || 'Nie udało się dodać usługi',
+      });
+    }
+  };
+
   const selectedClient = clients.find(c => c.id && c.id.toString() === formData.clientId);
   // Jeśli klient nie ma samochodów, ale został wybrany, pobierz szczegóły klienta
   useEffect(() => {
@@ -200,8 +230,9 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
   const isEditing = !!initialData;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-card border-border max-h-[90vh] overflow-y-auto">
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[500px] bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 rounded-lg bg-primary/10">
@@ -285,10 +316,23 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
 
           {/* Services Selection */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-muted-foreground" />
-              Usługi *
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <Wrench className="w-4 h-4 text-muted-foreground" />
+                Usługi *
+              </Label>
+              {canSeePrices && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewService(true)}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Dodaj usługę
+                </Button>
+              )}
+            </div>
             <div className="space-y-2">
               {loading ? (
                 <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground">
@@ -485,7 +529,14 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <NewServiceModal
+        open={showNewService}
+        onClose={() => setShowNewService(false)}
+        onSave={handleCreateService}
+      />
+    </>
   );
 }

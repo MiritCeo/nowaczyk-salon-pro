@@ -269,7 +269,7 @@ export default function ClientDetailPage() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground page-title">
               {client.firstName} {client.lastName}
             </h1>
             <p className="text-muted-foreground">

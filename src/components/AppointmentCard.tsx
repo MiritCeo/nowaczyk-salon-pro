@@ -1,21 +1,29 @@
+import { useEffect, useState } from 'react';
 import { Clock, Car, Wrench, Phone, User } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Appointment } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { getPaymentInfo } from '@/lib/payments';
+import { appointmentsAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppointmentCardProps {
   appointment: Appointment;
   onClick?: () => void;
   compact?: boolean;
   onOpenProtocol?: (appointment: Appointment) => void;
+  onPaymentChange?: (id: string, paidAmount: number) => void;
 }
 
-export function AppointmentCard({ appointment, onClick, compact = false, onOpenProtocol }: AppointmentCardProps) {
+export function AppointmentCard({ appointment, onClick, compact = false, onOpenProtocol, onPaymentChange }: AppointmentCardProps) {
   const { user } = useAuth();
   const canSeePrices = user?.role === 'admin';
+  const { toast } = useToast();
+  const [paidAmountInput, setPaidAmountInput] = useState('');
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
   // Użyj danych z appointment jeśli są dostępne, w przeciwnym razie użyj ID
   const client = appointment.client || { firstName: '', lastName: '', phone: '' };
   const car = appointment.car || { brand: '', model: '', color: '' };
@@ -45,6 +53,42 @@ export function AppointmentCard({ appointment, onClick, compact = false, onOpenP
     : '';
 
   if (!client || !car) return null;
+
+  useEffect(() => {
+    setPaidAmountInput((appointment.paidAmount ?? 0).toString());
+  }, [appointment.paidAmount]);
+
+  const handleSavePayment = async () => {
+    const amount = Number(paidAmountInput);
+    if (!Number.isFinite(amount)) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: 'Podaj poprawną kwotę.',
+      });
+      return;
+    }
+    if ((appointment.paidAmount ?? 0) === amount) {
+      return;
+    }
+    try {
+      setIsSavingPayment(true);
+      await appointmentsAPI.updatePayment(appointment.id, amount);
+      onPaymentChange?.(appointment.id, amount);
+      toast({
+        title: 'Zapisano',
+        description: 'Kwota wpłaty została zapisana.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd zapisu',
+        description: error.response?.data?.error || 'Nie udało się zapisać wpłaty.',
+      });
+    } finally {
+      setIsSavingPayment(false);
+    }
+  };
 
   if (compact) {
     return (
@@ -174,6 +218,33 @@ export function AppointmentCard({ appointment, onClick, compact = false, onOpenP
               style={{ width: `${paymentInfo.progress}%` }}
             />
           </div>
+          {!compact && canSeePrices && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={paidAmountInput}
+                onChange={(event) => setPaidAmountInput(event.target.value)}
+                onBlur={handleSavePayment}
+                onClick={(event) => event.stopPropagation()}
+                disabled={isSavingPayment}
+                className="h-9"
+              />
+              <Button
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleSavePayment();
+                }}
+                disabled={isSavingPayment || Number(paidAmountInput) === (appointment.paidAmount ?? 0)}
+              >
+                Zapisz
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

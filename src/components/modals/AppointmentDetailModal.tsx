@@ -8,11 +8,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Separator } from '@/components/ui/separator';
 import { Appointment, AppointmentStatus } from '@/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { appointmentsAPI } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
+import { getPaymentInfo } from '@/lib/payments';
+import { Label } from '@/components/ui/label';
 
 interface AppointmentDetailModalProps {
   appointment: Appointment | null;
@@ -22,6 +28,7 @@ interface AppointmentDetailModalProps {
   onEdit?: (appointment: Appointment) => void;
   onDelete?: (appointment: Appointment) => void;
   onOpenProtocol?: (appointment: Appointment) => void;
+  onPaymentChange?: (id: string, paidAmount: number) => void;
 }
 
 const statusOptions: { value: AppointmentStatus; label: string }[] = [
@@ -39,11 +46,15 @@ export function AppointmentDetailModal({
   onStatusChange,
   onEdit,
   onDelete,
-  onOpenProtocol
+  onOpenProtocol,
+  onPaymentChange
 }: AppointmentDetailModalProps) {
   if (!appointment) return null;
   const { user } = useAuth();
   const canSeePrices = user?.role === 'admin';
+  const { toast } = useToast();
+  const [paidAmountInput, setPaidAmountInput] = useState('');
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
 
   // Użyj danych z appointment jeśli są dostępne
   const client = appointment.client || { firstName: '', lastName: '', phone: '', email: '' };
@@ -60,8 +71,45 @@ export function AppointmentDetailModal({
   const basePrice = servicesTotalPrice > 0 ? servicesTotalPrice : (appointment.price || 0);
   const totalPrice = basePrice + extraCost;
   const employee = appointment.employee || null;
+  const paymentInfo = getPaymentInfo(appointment);
 
   if (!client || !car) return null;
+
+  useEffect(() => {
+    setPaidAmountInput((appointment.paidAmount ?? 0).toString());
+  }, [appointment]);
+
+  const handleSavePayment = async () => {
+    const amount = Number(paidAmountInput);
+    if (!Number.isFinite(amount)) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd',
+        description: 'Podaj poprawną kwotę.',
+      });
+      return;
+    }
+    if ((appointment.paidAmount ?? 0) === amount) {
+      return;
+    }
+    try {
+      setIsSavingPayment(true);
+      await appointmentsAPI.updatePayment(appointment.id, amount);
+      onPaymentChange?.(appointment.id, amount);
+      toast({
+        title: 'Zapisano',
+        description: 'Kwota wpłaty została zapisana.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Błąd zapisu',
+        description: error.response?.data?.error || 'Nie udało się zapisać wpłaty.',
+      });
+    } finally {
+      setIsSavingPayment(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -149,6 +197,52 @@ export function AppointmentDetailModal({
                     <span className="font-semibold text-foreground">{totalPrice.toFixed(2)} zł</span>
                   </div>
                 )}
+              </div>
+            </>
+          )}
+
+          {canSeePrices && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="font-semibold text-foreground">Rozliczenie</h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="paidAmount">Wpłacono (zł)</Label>
+                    <Input
+                      id="paidAmount"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={paidAmountInput}
+                      onChange={(event) => setPaidAmountInput(event.target.value)}
+                      onBlur={handleSavePayment}
+                      disabled={isSavingPayment}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-muted-foreground">Pozostało</p>
+                    <p className={cn(
+                      'text-lg font-semibold',
+                      paymentInfo.remaining > 0 ? 'text-rose-600' : 'text-emerald-600'
+                    )}>
+                      {paymentInfo.remaining.toFixed(2)} zł
+                    </p>
+                    {paymentInfo.isOverdue && paymentInfo.overdueDays > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {paymentInfo.overdueDays} dni zaległości
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSavePayment}
+                  disabled={isSavingPayment || Number(paidAmountInput) === (appointment.paidAmount ?? 0)}
+                >
+                  {isSavingPayment ? 'Zapisywanie...' : 'Zapisz wpłatę'}
+                </Button>
               </div>
             </>
           )}

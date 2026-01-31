@@ -307,6 +307,22 @@ export default function Dashboard() {
     }
   };
 
+  const handlePaymentChange = (id: string, paidAmount: number) => {
+    setTodayAppointments((prev) =>
+      prev.map((appointment) =>
+        appointment.id === id ? { ...appointment, paidAmount } : appointment
+      )
+    );
+    setTomorrowAppointments((prev) =>
+      prev.map((appointment) =>
+        appointment.id === id ? { ...appointment, paidAmount } : appointment
+      )
+    );
+    setSelectedAppointment((prev) =>
+      prev && prev.id === id ? { ...prev, paidAmount } : prev
+    );
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -329,7 +345,7 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold">Dzisiaj</h1>
+            <h1 className="text-2xl lg:text-3xl font-bold page-title">Dzisiaj</h1>
             <p className="text-muted-foreground">
               {new Date().toLocaleDateString('pl-PL', { 
                 weekday: 'long', 
@@ -393,6 +409,7 @@ export default function Dashboard() {
                   key={appointment.id} 
                   appointment={appointment}
                   onClick={() => handleSelectAppointment(appointment.id)}
+                  onPaymentChange={handlePaymentChange}
                   onOpenProtocol={(selected) => navigate(`/appointments/${selected.id}/protocol`)}
                 />
               ))}
@@ -416,6 +433,7 @@ export default function Dashboard() {
                   appointment={appointment}
                   compact
                   onClick={() => handleSelectAppointment(appointment.id)}
+                  onPaymentChange={handlePaymentChange}
                   onOpenProtocol={(selected) => navigate(`/appointments/${selected.id}/protocol`)}
                 />
               ))}
@@ -455,6 +473,7 @@ export default function Dashboard() {
         open={!!selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
         onStatusChange={handleStatusChange}
+        onPaymentChange={handlePaymentChange}
         onEdit={(appointment) => {
           setSelectedAppointment(null);
           setEditingAppointment(appointment);

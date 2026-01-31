@@ -278,7 +278,7 @@ export default function PaymentsPage() {
     <AppLayout>
       <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">Rozliczenia</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold page-title">Rozliczenia</h1>
           <p className="text-muted-foreground">Monitoruj status płatności za wizyty</p>
         </div>
 

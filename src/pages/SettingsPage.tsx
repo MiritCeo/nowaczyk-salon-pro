@@ -166,7 +166,7 @@ export default function SettingsPage() {
       <div className="p-4 lg:p-6 space-y-6 animate-fade-in">
         {/* Header */}
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">Ustawienia</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold page-title">Ustawienia</h1>
           <p className="text-muted-foreground">Zarządzaj swoim salonem</p>
         </div>
 
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium">{service.name}</p>
-                    <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">
+                    <span className="px-2 py-0.5 rounded border border-primary/30 bg-primary/15 text-foreground text-xs font-semibold">
                       {service.category}
                     </span>
                   </div>
@@ -282,10 +282,10 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground">{employee.email}</p>
                 </div>
                 <span className={cn(
-                  'px-2 py-1 rounded text-xs font-medium',
+                  'px-2 py-1 rounded border text-xs font-semibold',
                   employee.role === 'admin' 
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-secondary/80 text-secondary-foreground'
+                    ? 'bg-primary/15 text-foreground border-primary/30'
+                    : 'bg-secondary text-foreground border-border'
                 )}>
                   {employee.role === 'admin' ? 'Administrator' : 'Pracownik'}
                 </span>

@@ -595,7 +595,7 @@ export default function CarProtocolPage() {
                 {appointment.car?.brand || ''} {appointment.car?.model || ''} • {appointment.car?.plateNumber || ''}
               </span>
             </div>
-            <h1 className="text-2xl font-bold mt-1">Protokół odbioru auta</h1>
+            <h1 className="text-2xl font-bold mt-1 page-title">Protokół odbioru auta</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate(-1)}>
