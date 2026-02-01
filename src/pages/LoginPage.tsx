@@ -58,11 +58,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleFillDemo = () => {
-    setEmail('michal@nowaczyk.pl');
-    setPassword('password123');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/10">
       <div className="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-10">
@@ -70,7 +65,7 @@ export default function LoginPage() {
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
               <Sparkles className="h-4 w-4" />
-              Demo panelu zarządzania salonem
+              Panel zarządzania salonem
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-bold lg:text-4xl page-title">
@@ -78,7 +73,7 @@ export default function LoginPage() {
               </h1>
               <p className="text-muted-foreground text-base lg:text-lg">
                 Poznaj system, który łączy kalendarz, klientów i płatności w jednym miejscu. 
-                Sprawdź demo bez zobowiązań.
+                Zaloguj się, aby kontynuować.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -104,27 +99,13 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Lock className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold">Zaloguj się do demo</CardTitle>
+              <CardTitle className="text-2xl font-bold">Zaloguj się</CardTitle>
               <CardDescription>
-                Użyj konta testowego poniżej
+                Wprowadź dane dostępowe
               </CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-4">
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
-                <p className="font-semibold text-foreground">Dane demo</p>
-                <p className="text-muted-foreground">Email: michal@nowaczyk.pl</p>
-                <p className="text-muted-foreground">Hasło: password123</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mt-3 w-full"
-                  onClick={handleFillDemo}
-                >
-                  Uzupełnij dane demo
-                </Button>
-              </div>
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
                   <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-destructive text-sm">
@@ -141,7 +122,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="demo@garage22.app"
+                    placeholder="np. jan.kowalski@email.pl"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
