@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 const statusConfig: Record<AppointmentStatus, { label: string; className: string }> = {
   'scheduled': { 
     label: 'Zaplanowana', 
-    className: 'bg-primary/15 text-primary border-primary/40' 
+    className: 'bg-status-scheduled/15 text-status-scheduled border-status-scheduled/40' 
   },
   'in-progress': { 
     label: 'W trakcie', 

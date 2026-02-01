@@ -195,7 +195,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
                             'hover:border-primary/40',
                             apt.status === 'completed' && 'bg-status-completed/10 border-status-completed/30',
                             apt.status === 'in-progress' && 'bg-status-in-progress/10 border-status-in-progress/30',
-                            apt.status === 'scheduled' && 'bg-primary/10 border-primary/30',
+                            apt.status === 'scheduled' && 'bg-status-scheduled/10 border-status-scheduled/30',
                             apt.status === 'cancelled' && 'bg-status-cancelled/10 border-status-cancelled/30',
                             apt.status === 'no-show' && 'bg-status-no-show/10 border-status-no-show/30',
                           )}
@@ -273,7 +273,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
                             'w-full text-left p-1.5 rounded text-xs transition-all hover:ring-1 hover:ring-primary/50',
                             apt.status === 'completed' && 'bg-status-completed/10 border-l-2 border-status-completed',
                             apt.status === 'in-progress' && 'bg-status-in-progress/10 border-l-2 border-status-in-progress',
-                            apt.status === 'scheduled' && 'bg-primary/10 border-l-2 border-primary',
+                            apt.status === 'scheduled' && 'bg-status-scheduled/10 border-l-2 border-status-scheduled',
                             apt.status === 'cancelled' && 'bg-status-cancelled/10 border-l-2 border-status-cancelled',
                             apt.status === 'no-show' && 'bg-status-no-show/10 border-l-2 border-status-no-show',
                           )}
@@ -390,7 +390,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
                             'hover:border-primary/40',
                             apt.status === 'completed' && 'bg-status-completed/10 border-status-completed/30',
                             apt.status === 'in-progress' && 'bg-status-in-progress/10 border-status-in-progress/30',
-                            apt.status === 'scheduled' && 'bg-primary/10 border-primary/30',
+                            apt.status === 'scheduled' && 'bg-status-scheduled/10 border-status-scheduled/30',
                             apt.status === 'cancelled' && 'bg-status-cancelled/10 border-status-cancelled/30',
                             apt.status === 'no-show' && 'bg-status-no-show/10 border-status-no-show/30',
                           )}
@@ -471,7 +471,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
                             key={i} 
                             className={cn(
                               'w-1.5 h-1.5 rounded-full',
-                              apt.status === 'scheduled' && 'bg-primary',
+                              apt.status === 'scheduled' && 'bg-status-scheduled',
                               apt.status === 'in-progress' && 'bg-status-in-progress',
                               apt.status === 'completed' && 'bg-status-completed',
                             )}
