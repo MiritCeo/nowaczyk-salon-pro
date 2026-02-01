@@ -17,9 +17,10 @@ interface CalendarViewProps {
   appointments: Appointment[];
   onNewAppointment?: () => void;
   onSelectAppointment?: (id: string) => void;
+  onDateClick?: (date: Date) => void;
 }
 
-export function CalendarView({ appointments, onNewAppointment, onSelectAppointment }: CalendarViewProps) {
+export function CalendarView({ appointments, onNewAppointment, onSelectAppointment, onDateClick }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<ViewType>('week');
   const [isMobile, setIsMobile] = useState(false);
@@ -56,6 +57,16 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
     });
   };
 
+  const getMonthDates = () => {
+    const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    return Array.from({ length: end.getDate() }, (_, i) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      return date;
+    });
+  };
+
   const getAppointmentsForDate = (date: Date) => {
     return appointments.filter(apt => 
       apt.date.toDateString() === date.toDateString()
@@ -63,6 +74,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
   };
 
   const weekDates = getWeekDates();
+  const monthDates = getMonthDates();
   const today = new Date();
 
   const formatDateTitle = () => {
@@ -109,7 +121,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
           <h2 className="text-lg font-semibold capitalize">{formatDateTitle()}</h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center bg-secondary rounded-lg p-1">
             {(['day', 'week', 'month'] as ViewType[]).map((v) => (
               <button
@@ -136,71 +148,154 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
 
       {/* Week View */}
       {view === 'week' && (
-        <div className="grid grid-cols-7 gap-2 flex-1">
-          {weekDates.map((date, index) => {
-            const appointments = getAppointmentsForDate(date);
-            const isToday = date.toDateString() === today.toDateString();
-            
-            return (
-              <div key={index} className="flex flex-col">
-                <div className={cn(
-                  'text-center py-2 rounded-t-lg',
-                  isToday ? 'bg-primary/10' : 'bg-card'
-                )}>
-                  <p className="text-xs text-muted-foreground">{weekDays[index]}</p>
-                  <p className={cn(
-                    'text-lg font-semibold',
-                    isToday && 'text-primary'
-                  )}>
-                    {date.getDate()}
-                  </p>
-                </div>
-                
-                <div className={cn(
-                  'flex-1 p-1 space-y-1 bg-card/50 rounded-b-lg min-h-[200px]',
-                  isToday && 'border border-primary/20'
-                )}>
-                  {appointments.map((apt) => {
-                    const client = apt.client || { firstName: '', lastName: '' };
-                    const services = apt.services && apt.services.length > 0
-                      ? apt.services
-                      : apt.service
-                        ? [apt.service]
-                        : [];
-                    const primaryService = services[0] || { name: '' };
-                    const serviceLabel = services.length > 1
-                      ? `${primaryService.name} +${services.length - 1}`
-                      : primaryService.name;
-                    return (
-                      <button
-                        key={apt.id}
-                        onClick={() => onSelectAppointment?.(apt.id)}
-                        className={cn(
-                          'w-full text-left p-1.5 rounded text-xs transition-all hover:ring-1 hover:ring-primary/50',
-                          apt.status === 'completed' && 'bg-status-completed/10 border-l-2 border-status-completed',
-                          apt.status === 'in-progress' && 'bg-status-in-progress/10 border-l-2 border-status-in-progress',
-                          apt.status === 'scheduled' && 'bg-primary/10 border-l-2 border-primary',
-                          apt.status === 'cancelled' && 'bg-status-cancelled/10 border-l-2 border-status-cancelled',
-                          apt.status === 'no-show' && 'bg-status-no-show/10 border-l-2 border-status-no-show',
-                        )}
-                      >
-                        <p className="font-semibold text-primary">{apt.startTime}</p>
-                        <p className="truncate">{client.firstName} {client.lastName?.[0]}.</p>
-                        <p className="text-muted-foreground truncate">{serviceLabel}</p>
-                      </button>
-                    );
-                  })}
-                  
-                  {appointments.length === 0 && (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                      <span className="text-xs">—</span>
+        isMobile ? (
+          <div className="space-y-4">
+            {weekDates.map((date, index) => {
+              const appointments = getAppointmentsForDate(date);
+              const isToday = date.toDateString() === today.toDateString();
+              return (
+                <div key={index} className="rounded-xl border border-border bg-card/70 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => onDateClick?.(date)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-4 py-3 text-left transition-colors',
+                      'hover:bg-primary/10',
+                      isToday ? 'bg-primary/10' : 'bg-card'
+                    )}
+                  >
+                    <div>
+                      <p className="text-xs text-muted-foreground">Kliknij, aby dodać</p>
+                      <p className={cn('text-lg font-semibold', isToday && 'text-primary')}>
+                        {weekDays[index]} · {date.getDate()} {monthNames[date.getMonth()].slice(0, 3)}
+                      </p>
                     </div>
-                  )}
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-primary">
+                      <Plus className="h-4 w-4" />
+                    </span>
+                  </button>
+                  <div className="p-3 space-y-2">
+                    {appointments.map((apt) => {
+                      const client = apt.client || { firstName: '', lastName: '' };
+                      const services = apt.services && apt.services.length > 0
+                        ? apt.services
+                        : apt.service
+                          ? [apt.service]
+                          : [];
+                      const primaryService = services[0] || { name: '' };
+                      const serviceLabel = services.length > 1
+                        ? `${primaryService.name} +${services.length - 1}`
+                        : primaryService.name;
+                      return (
+                        <button
+                          key={apt.id}
+                          onClick={() => onSelectAppointment?.(apt.id)}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-lg text-sm border transition-all',
+                            'hover:border-primary/40',
+                            apt.status === 'completed' && 'bg-status-completed/10 border-status-completed/30',
+                            apt.status === 'in-progress' && 'bg-status-in-progress/10 border-status-in-progress/30',
+                            apt.status === 'scheduled' && 'bg-primary/10 border-primary/30',
+                            apt.status === 'cancelled' && 'bg-status-cancelled/10 border-status-cancelled/30',
+                            apt.status === 'no-show' && 'bg-status-no-show/10 border-status-no-show/30',
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-primary">{apt.startTime}</p>
+                            <StatusBadge status={apt.status} />
+                          </div>
+                          <p className="truncate">{client.firstName} {client.lastName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{serviceLabel}</p>
+                        </button>
+                      );
+                    })}
+                    {appointments.length === 0 && (
+                      <div className="text-center text-xs text-muted-foreground py-3">Brak wizyt</div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-7 gap-2 flex-1">
+            {weekDates.map((date, index) => {
+              const appointments = getAppointmentsForDate(date);
+              const isToday = date.toDateString() === today.toDateString();
+              
+              return (
+                <div key={index} className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => onDateClick?.(date)}
+                    className={cn(
+                      'text-center py-2 rounded-t-lg border-b border-border/40 transition-colors',
+                      'hover:bg-primary/10',
+                      isToday ? 'bg-primary/10' : 'bg-card'
+                    )}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Kliknij, aby dodać</p>
+                        <p className={cn(
+                          'text-lg font-semibold',
+                          isToday && 'text-primary'
+                        )}>
+                          {weekDays[index]} {date.getDate()}
+                        </p>
+                      </div>
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/15 text-primary">
+                        <Plus className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </button>
+                  
+                  <div className={cn(
+                    'flex-1 p-1 space-y-1 bg-card/50 rounded-b-lg min-h-[200px]',
+                    isToday && 'border border-primary/20'
+                  )}>
+                    {appointments.map((apt) => {
+                      const client = apt.client || { firstName: '', lastName: '' };
+                      const services = apt.services && apt.services.length > 0
+                        ? apt.services
+                        : apt.service
+                          ? [apt.service]
+                          : [];
+                      const primaryService = services[0] || { name: '' };
+                      const serviceLabel = services.length > 1
+                        ? `${primaryService.name} +${services.length - 1}`
+                        : primaryService.name;
+                      return (
+                        <button
+                          key={apt.id}
+                          onClick={() => onSelectAppointment?.(apt.id)}
+                          className={cn(
+                            'w-full text-left p-1.5 rounded text-xs transition-all hover:ring-1 hover:ring-primary/50',
+                            apt.status === 'completed' && 'bg-status-completed/10 border-l-2 border-status-completed',
+                            apt.status === 'in-progress' && 'bg-status-in-progress/10 border-l-2 border-status-in-progress',
+                            apt.status === 'scheduled' && 'bg-primary/10 border-l-2 border-primary',
+                            apt.status === 'cancelled' && 'bg-status-cancelled/10 border-l-2 border-status-cancelled',
+                            apt.status === 'no-show' && 'bg-status-no-show/10 border-l-2 border-status-no-show',
+                          )}
+                        >
+                          <p className="font-semibold text-primary">{apt.startTime}</p>
+                          <p className="truncate">{client.firstName} {client.lastName?.[0]}.</p>
+                          <p className="text-muted-foreground truncate">{serviceLabel}</p>
+                        </button>
+                      );
+                    })}
+                    
+                    {appointments.length === 0 && (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <span className="text-xs">—</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
       )}
 
       {/* Day View */}
@@ -240,7 +335,7 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
           {getAppointmentsForDate(currentDate).length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <p>Brak wizyt na ten dzień</p>
-              <Button onClick={onNewAppointment} variant="outline" className="mt-4">
+              <Button onClick={() => onDateClick?.(currentDate)} variant="outline" className="mt-4">
                 <Plus className="w-4 h-4 mr-2" />
                 Dodaj wizytę
               </Button>
@@ -251,68 +346,147 @@ export function CalendarView({ appointments, onNewAppointment, onSelectAppointme
 
       {/* Month View */}
       {view === 'month' && (
-        <div className="grid grid-cols-7 gap-1">
-          {weekDays.map((day) => (
-            <div key={day} className="text-center py-2 text-xs font-medium text-muted-foreground">
-              {day}
-            </div>
-          ))}
-          
-          {(() => {
-            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-            const startPadding = (firstDay.getDay() + 6) % 7;
-            const days = [];
-            
-            for (let i = 0; i < startPadding; i++) {
-              days.push(<div key={`pad-${i}`} className="p-2" />);
-            }
-            
-            for (let d = 1; d <= lastDay.getDate(); d++) {
-              const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+        isMobile ? (
+          <div className="space-y-4">
+            {monthDates.map((date) => {
               const appointments = getAppointmentsForDate(date);
               const isToday = date.toDateString() === today.toDateString();
-              
-              days.push(
-                <button
-                  key={d}
-                  onClick={() => {
-                    setCurrentDate(date);
-                    setView('day');
-                  }}
-                  className={cn(
-                    'p-2 rounded-lg text-center transition-all hover:bg-secondary min-h-[60px]',
-                    isToday && 'ring-1 ring-primary bg-primary/5'
-                  )}
-                >
-                  <span className={cn(
-                    'text-sm font-medium',
-                    isToday && 'text-primary'
-                  )}>
-                    {d}
-                  </span>
-                  {appointments.length > 0 && (
-                    <div className="flex justify-center gap-0.5 mt-1">
-                      {appointments.slice(0, 3).map((apt, i) => (
-                        <div 
-                          key={i} 
-                          className={cn(
-                            'w-1.5 h-1.5 rounded-full',
-                            apt.status === 'scheduled' && 'bg-primary',
-                            apt.status === 'in-progress' && 'bg-status-in-progress',
-                            apt.status === 'completed' && 'bg-status-completed',
-                          )}
-                        />
-                      ))}
+              return (
+                <div key={date.toISOString()} className="rounded-xl border border-border bg-card/70 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => onDateClick?.(date)}
+                    className={cn(
+                      'w-full flex items-center justify-between px-4 py-3 text-left',
+                      isToday ? 'bg-primary/10' : 'bg-card'
+                    )}
+                  >
+                    <div>
+                      <p className="text-xs text-muted-foreground">{weekDays[date.getDay() === 0 ? 6 : date.getDay() - 1]}</p>
+                      <p className={cn('text-lg font-semibold', isToday && 'text-primary')}>
+                        {date.getDate()} {monthNames[date.getMonth()].slice(0, 3)}
+                      </p>
                     </div>
-                  )}
-                </button>
+                    <span className="text-xs text-muted-foreground">Dodaj wizytę</span>
+                  </button>
+                  <div className="p-3 space-y-2">
+                    {appointments.map((apt) => {
+                      const client = apt.client || { firstName: '', lastName: '' };
+                      const services = apt.services && apt.services.length > 0
+                        ? apt.services
+                        : apt.service
+                          ? [apt.service]
+                          : [];
+                      const primaryService = services[0] || { name: '' };
+                      const serviceLabel = services.length > 1
+                        ? `${primaryService.name} +${services.length - 1}`
+                        : primaryService.name;
+                      return (
+                        <button
+                          key={apt.id}
+                          onClick={() => onSelectAppointment?.(apt.id)}
+                          className={cn(
+                            'w-full text-left px-3 py-2 rounded-lg text-sm border transition-all',
+                            'hover:border-primary/40',
+                            apt.status === 'completed' && 'bg-status-completed/10 border-status-completed/30',
+                            apt.status === 'in-progress' && 'bg-status-in-progress/10 border-status-in-progress/30',
+                            apt.status === 'scheduled' && 'bg-primary/10 border-primary/30',
+                            apt.status === 'cancelled' && 'bg-status-cancelled/10 border-status-cancelled/30',
+                            apt.status === 'no-show' && 'bg-status-no-show/10 border-status-no-show/30',
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-primary">{apt.startTime}</p>
+                            <StatusBadge status={apt.status} />
+                          </div>
+                          <p className="truncate">{client.firstName} {client.lastName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{serviceLabel}</p>
+                        </button>
+                      );
+                    })}
+                    {appointments.length === 0 && (
+                      <div className="text-center text-xs text-muted-foreground py-3">Brak wizyt</div>
+                    )}
+                  </div>
+                </div>
               );
-            }
+            })}
+          </div>
+        ) : (
+          <div className="grid grid-cols-7 gap-1">
+            {weekDays.map((day) => (
+              <div key={day} className="text-center py-2 text-xs font-medium text-muted-foreground">
+                {day}
+              </div>
+            ))}
             
-            return days;
-          })()}
-        </div>
+            {(() => {
+              const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+              const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+              const startPadding = (firstDay.getDay() + 6) % 7;
+              const days = [];
+              
+              for (let i = 0; i < startPadding; i++) {
+                days.push(<div key={`pad-${i}`} className="p-2" />);
+              }
+              
+              for (let d = 1; d <= lastDay.getDate(); d++) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+                const appointments = getAppointmentsForDate(date);
+                const isToday = date.toDateString() === today.toDateString();
+                
+                days.push(
+                  <button
+                    key={d}
+                    onClick={() => {
+                      onDateClick?.(date);
+                    }}
+                    className={cn(
+                      'p-2 rounded-lg text-center transition-all hover:bg-secondary min-h-[60px]',
+                      isToday && 'ring-1 ring-primary bg-primary/5'
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <span className={cn(
+                        'text-sm font-medium',
+                        isToday && 'text-primary'
+                      )}>
+                        {d}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDateClick?.(date);
+                        }}
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {appointments.length > 0 && (
+                      <div className="flex justify-center gap-0.5 mt-1">
+                        {appointments.slice(0, 3).map((apt, i) => (
+                          <div 
+                            key={i} 
+                            className={cn(
+                              'w-1.5 h-1.5 rounded-full',
+                              apt.status === 'scheduled' && 'bg-primary',
+                              apt.status === 'in-progress' && 'bg-status-in-progress',
+                              apt.status === 'completed' && 'bg-status-completed',
+                            )}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                );
+              }
+              
+              return days;
+            })()}
+          </div>
+        )
       )}
     </div>
   );

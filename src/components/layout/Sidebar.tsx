@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-const logo = new URL('../../../app-logo.png', import.meta.url).href;
+const logo = new URL('../../../22logocar.png', import.meta.url).href;
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dzisiaj' },
@@ -38,9 +38,9 @@ export function Sidebar() {
     <aside className="hidden lg:flex flex-col w-64 min-h-screen bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="flex items-center gap-3 p-6 border-b border-sidebar-border">
-        <img src={logo} alt="Car22" className="w-10 h-10 rounded-lg" />
+        <img src={logo} alt="Garage 22" className="w-10 h-10 rounded-lg" />
         <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-sm truncate text-sidebar-foreground">Car22</h1>
+          <h1 className="font-bold text-sm truncate text-sidebar-foreground">Garage 22</h1>
           <p className="text-[10px] text-primary font-medium uppercase tracking-wider">Demo Platform</p>
         </div>
       </div>
@@ -74,7 +74,7 @@ export function Sidebar() {
             {user?.name.split(' ').map(n => n[0]).join('') || 'MN'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.name || 'Car22 Admin'}</p>
+            <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.name || 'Garage 22 Admin'}</p>
             <p className="text-xs text-sidebar-foreground/60">{user?.role === 'admin' ? 'Administrator' : 'Pracownik'}</p>
           </div>
         </div>

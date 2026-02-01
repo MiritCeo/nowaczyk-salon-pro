@@ -33,7 +33,7 @@ export default function LoginPage() {
       
       toast({
         title: 'Zalogowano pomyślnie',
-        description: 'Witaj w panelu Car22',
+        description: 'Witaj w panelu Garage 22',
       });
       
       // Użyj setTimeout aby dać czas na aktualizację state w AuthContext
@@ -106,7 +106,7 @@ export default function LoginPage() {
               </div>
               <CardTitle className="text-2xl font-bold">Zaloguj się do demo</CardTitle>
               <CardDescription>
-                Użyj konta testowego albo własnych danych
+                Użyj konta testowego poniżej
               </CardDescription>
             </CardHeader>
             
@@ -141,7 +141,7 @@ export default function LoginPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="demo@car22.app"
+                    placeholder="demo@garage22.app"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

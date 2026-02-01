@@ -18,6 +18,8 @@ interface NewAppointmentModalProps {
   prefillData?: {
     clientId?: string;
     carId?: string;
+    date?: string;
+    time?: string;
   };
   initialData?: {
     clientId?: string;
@@ -68,6 +70,8 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
           ...prev,
           clientId: prefillData.clientId || prev.clientId,
           carId: prefillData.carId || prev.carId,
+          date: prefillData.date || prev.date,
+          time: prefillData.time || prev.time,
         }));
       }
       if (initialData) {

@@ -324,9 +324,36 @@ export default function CarProtocolPage() {
       reader.readAsDataURL(file);
     });
 
+  const compressImage = async (file: File, maxSize: number = 1600, quality: number = 0.75) => {
+    if (!file.type.startsWith('image/')) {
+      return fileToDataUrl(file);
+    }
+    const originalDataUrl = await fileToDataUrl(file);
+    const image = new Image();
+    image.src = originalDataUrl;
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error('Nie udało się wczytać zdjęcia'));
+    });
+
+    const maxDimension = Math.max(image.width, image.height);
+    const scale = maxDimension > maxSize ? maxSize / maxDimension : 1;
+    const targetWidth = Math.round(image.width * scale);
+    const targetHeight = Math.round(image.height * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return originalDataUrl;
+
+    ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+    return canvas.toDataURL('image/jpeg', quality);
+  };
+
   const handleAddPhotos = async (kind: 'intake' | 'release', files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const dataUrls = await Promise.all(Array.from(files).map((file) => fileToDataUrl(file)));
+    const dataUrls = await Promise.all(Array.from(files).map((file) => compressImage(file)));
     if (kind === 'intake') {
       updateProtocol({ intakePhotos: [...protocol.intakePhotos, ...dataUrls] });
     } else {

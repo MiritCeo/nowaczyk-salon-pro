@@ -14,6 +14,7 @@ export default function CalendarPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [prefillData, setPrefillData] = useState<{ date?: string; time?: string } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -253,6 +254,13 @@ export default function CalendarPage() {
     }
   };
 
+  const handleDateClick = (date: Date) => {
+    setPrefillData({
+      date: date.toISOString().split('T')[0],
+    });
+    setShowNewAppointment(true);
+  };
+
   return (
     <AppLayout>
       <div className="p-4 lg:p-6 h-full animate-fade-in">
@@ -268,14 +276,19 @@ export default function CalendarPage() {
             appointments={appointments}
             onNewAppointment={() => setShowNewAppointment(true)}
             onSelectAppointment={handleSelectAppointment}
+            onDateClick={handleDateClick}
           />
         )}
       </div>
 
       <NewAppointmentModal 
         open={showNewAppointment} 
-        onClose={() => setShowNewAppointment(false)}
+        onClose={() => {
+          setShowNewAppointment(false);
+          setPrefillData(null);
+        }}
         onSave={handleSaveAppointment}
+        prefillData={prefillData || undefined}
       />
       <NewAppointmentModal
         open={!!editingAppointment}
