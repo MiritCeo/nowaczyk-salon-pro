@@ -10,6 +10,7 @@ import { clientsAPI, servicesAPI, employeesAPI } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { NewServiceModal } from '@/components/modals/NewServiceModal';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface NewAppointmentModalProps {
   open: boolean;
@@ -50,6 +51,7 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showNewService, setShowNewService] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
   const { user } = useAuth();
   const canSeePrices = user?.role === 'admin';
   const { toast } = useToast();
@@ -99,6 +101,7 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
         notes: '',
         extraCost: '',
       });
+      setClientSearch('');
       setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,6 +181,20 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
   };
 
   const selectedClient = clients.find(c => c.id && c.id.toString() === formData.clientId);
+  const selectedClientLabel = selectedClient
+    ? `${selectedClient.first_name || ''} ${selectedClient.last_name || ''}`.trim()
+    : '';
+  const filteredClients = clients
+    .filter(client => client.id != null)
+    .filter(client => {
+      if (!clientSearch) return true;
+      const query = clientSearch.toLowerCase();
+      return (
+        `${client.first_name || ''} ${client.last_name || ''}`.toLowerCase().includes(query) ||
+        (client.phone || '').toLowerCase().includes(query) ||
+        (client.email || '').toLowerCase().includes(query)
+      );
+    });
   // Jeśli klient nie ma samochodów, ale został wybrany, pobierz szczegóły klienta
   useEffect(() => {
     if (formData.clientId && selectedClient && (!selectedClient.cars || selectedClient.cars.length === 0)) {
@@ -259,29 +276,66 @@ export function NewAppointmentModal({ open, onClose, onSave, prefillData, initia
               <User className="w-4 h-4 text-muted-foreground" />
               Klient *
             </Label>
-            <Select 
-              value={formData.clientId} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, clientId: value, carId: '' }))}
-            >
-              <SelectTrigger className="bg-input border-border">
-                <SelectValue placeholder="Wybierz klienta" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border">
-                {loading ? (
-                  <SelectItem value="loading-state" disabled>Ładowanie...</SelectItem>
-                ) : clients.length === 0 ? (
-                  <SelectItem value="no-clients" disabled>Brak klientów w bazie</SelectItem>
-                ) : (
-                  clients
-                    .filter(client => client.id != null)
-                    .map((client) => (
-                      <SelectItem key={client.id} value={client.id.toString()}>
-                        {client.first_name} {client.last_name}
-                      </SelectItem>
-                    ))
-                )}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                placeholder="Szukaj klienta po imieniu, telefonie, email..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                className="bg-input border-border"
+              />
+              {selectedClient && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, clientId: '', carId: '' }));
+                    setClientSearch('');
+                  }}
+                >
+                  Wyczyść
+                </Button>
+              )}
+            </div>
+            <div className="rounded-lg border border-border bg-card max-h-48 overflow-y-auto">
+              {loading ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">Ładowanie klientów...</div>
+              ) : clients.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">Brak klientów w bazie</div>
+              ) : filteredClients.length === 0 ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">Brak wyników</div>
+              ) : (
+                filteredClients.map((client) => {
+                  const clientId = client.id.toString();
+                  const label = `${client.first_name || ''} ${client.last_name || ''}`.trim();
+                  const isSelected = formData.clientId === clientId;
+                  return (
+                    <button
+                      key={clientId}
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, clientId, carId: '' }));
+                        setClientSearch(label);
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-2 text-sm transition-colors border-b border-border/60 last:border-b-0',
+                        isSelected ? 'bg-primary/15 text-foreground' : 'hover:bg-secondary/70'
+                      )}
+                    >
+                      <div className="font-medium">{label || 'Bez nazwy'}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {client.phone || 'Brak telefonu'}{client.email ? ` · ${client.email}` : ''}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {selectedClientLabel && (
+              <p className="text-xs text-muted-foreground">
+                Wybrany klient: <span className="font-medium text-foreground">{selectedClientLabel}</span>
+              </p>
+            )}
           </div>
 
           {/* Car Selection */}
