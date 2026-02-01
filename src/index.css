@@ -46,7 +46,7 @@
     --sidebar-accent-foreground: 180 15% 96%;
     
     /* Status colors */
-    --status-scheduled: 260 80% 45%;
+    --status-scheduled: 210 90% 44%;
     --status-in-progress: 35 90% 38%;
     --status-completed: 145 70% 30%;
     --status-cancelled: 215 12% 40%;
